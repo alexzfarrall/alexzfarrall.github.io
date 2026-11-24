@@ -1,0 +1,52 @@
+---
+// One shareable page per research item that has pop-out details. Works without JS;
+// the homepage pop-out loads the same article from here.
+import { getEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ProjectDetail from '../../components/ProjectDetail.astro';
+import { isProject, researchItems, type ResearchItem } from '../../lib/project';
+import { resolveImage, resolveOptional } from '../../lib/uploads';
+
+export async function getStaticPaths() {
+  return (await researchItems()).filter(isProject).map((item) => ({ params: { slug: item.id }, props: { item } }));
+}
+
+interface Props { item: ResearchItem }
+const { item } = Astro.props;
+const entry = await getEntry('site', 'site');
+if (!entry) throw new Error('Missing src/content/site/site.yml');
+const site = entry.data;
+const sameAs = [site.links.linkedin, site.links.scholar, site.links.github].filter((u): u is string => Boolean(u));
+const photo = resolveOptional(item.photo);
+---
+<Base
+  title={`${item.title} · ${site.name}`}
+  description={item.summary ?? item.title}
+  image={resolveImage(site.socialImage)}
+  ogImage={photo}
+  imageAlt={photo ? item.photoAlt : undefined}
+  name={site.name}
+  sameAs={sameAs}
+>
+  <header class="pp__head">
+    <a href="/#research">← All research</a>
+    <a class="pp__name" href="/">{site.name}</a>
+  </header>
+  <main class="pp">
+    <ProjectDetail item={item} />
+  </main>
+</Base>
+
+<style>
+  .pp__head, .pp { width: min(100%, 44rem); margin-inline: auto; }
+  .pp__head {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+    padding: 1.25rem 2rem; font-size: 0.9rem;
+  }
+  .pp__head a { color: var(--ink-soft); text-decoration: none; }
+  .pp__head a:hover { color: var(--accent); }
+  .pp__head .pp__name { font: 500 1.05rem var(--font-display); color: var(--ink); white-space: nowrap; }
+  .pp { padding-bottom: var(--space-section); }
+  /* Line the header up with the article text. */
+  @media (max-width: 36rem) { .pp__head { padding-inline: 1.25rem; } }
+</style>

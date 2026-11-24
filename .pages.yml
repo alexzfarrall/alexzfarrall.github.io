@@ -11,6 +11,12 @@ media:
     output: /logos
     extensions: [svg, png]
     rename: safe
+  - name: files
+    label: Files (PDF)
+    input: public/files
+    output: /files
+    extensions: [pdf]
+    rename: safe
 
 content:
   - name: site
@@ -87,6 +93,11 @@ content:
       - { name: photoAlt, label: Photo description (optional; the title is used if blank), type: string }
       - { name: pinned, label: "Pin to the top", type: boolean }
       - { name: hidden, label: "Hide from the website (draft)", type: boolean }
+      - { name: summary, label: "Pop-out summary (optional)", description: "Two or three sentences: the problem, what was built, why it matters. Filling in any pop-out field gives this item its own page and a + on its card.", type: text, options: { maxlength: 600 } }
+      - { name: gallery, label: "Extra photos (optional)", description: "Up to 6 photos shown in the pop-out. JPG or PNG, under 2 MB.", type: image, options: { media: images, multiple: { max: 6 } } }
+      - { name: results, label: "Key results (optional)", description: "Up to 5 short lines (max 120 characters each), e.g. a number or an outcome.", type: string, list: { max: 5 }, options: { maxlength: 120 } }
+      - { name: pdf, label: "Overview PDF (optional)", description: "A PDF under 5 MB, shown as a Project overview button.", type: file, options: { media: files } }
+      - { name: linkLabel, label: "Main button text (optional)", description: "Max 40 characters. Leave blank for Read the paper (papers) or Visit project.", type: string, options: { maxlength: 40 } }
 
   - name: recognition
     label: Recognition

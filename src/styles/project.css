@@ -1,0 +1,88 @@
+/* Project details: shared by /projects/<id>/ pages and the pop-out dialog on the homepage. */
+.pd { position: relative; }
+.pd__hero { aspect-ratio: 21 / 9; background: var(--paper-2); overflow: hidden; }
+.pd__hero img { width: 100%; height: 100%; object-fit: cover; object-position: center 38%; }
+.pd__body { padding: 1.5rem 2rem 1.75rem; }
+.pd__body--bare { padding-top: 3.25rem; }
+.pd__meta {
+  display: flex; flex-wrap: wrap; gap: 0.45rem 0.6rem; align-items: center;
+  font: 600 0.64rem/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-faint); margin: 0 0 0.75rem;
+}
+.pd__meta b {
+  background: var(--accent); color: #fff; font-weight: 600; padding: 0.3rem 0.55rem;
+  border-radius: 999px; letter-spacing: 0.06em; font-size: 0.6rem;
+}
+.pd__title { font: 400 1.7rem/1.18 var(--font-display); margin: 0 0 0.9rem; letter-spacing: -0.01em; max-width: 30ch; }
+.pd__sum { font: 400 0.97rem/1.62 var(--font-body); color: var(--ink-soft); margin: 0 0 1.3rem; max-width: 60ch; }
+.pd__gal { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0 0 1.4rem; }
+.pd__gal img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; background: var(--paper-2); }
+.pd__h {
+  font: 600 0.62rem/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-faint); margin: 0 0 0.6rem;
+}
+.pd__res { list-style: none; padding: 0; margin: 0 0 1.5rem; display: grid; gap: 0.45rem; }
+.pd__res li { font: 400 1rem/1.4 var(--font-display); padding-left: 1rem; position: relative; }
+.pd__res li::before {
+  content: ''; position: absolute; left: 0; top: 0.55em; width: 0.32rem; height: 0.32rem;
+  border-radius: 50%; background: var(--accent);
+}
+.pd__act { display: flex; gap: 0.6rem; flex-wrap: wrap; padding-top: 1.2rem; border-top: 1px solid var(--rule); }
+.pd__btn {
+  font: 500 0.84rem var(--font-body); padding: 0.62rem 1.05rem; border-radius: 999px; text-decoration: none;
+  border: 1px solid var(--rule); color: var(--ink); display: inline-flex; gap: 0.45rem; align-items: center;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.pd__btn:hover { border-color: var(--ink-faint); color: var(--ink); }
+.pd__btn--p { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.pd__btn--p:hover { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.pd__btn small { font: 400 0.72rem var(--font-body); color: var(--ink-faint); }
+
+/* Pop-out */
+dialog.pm {
+  border: 0; padding: 0; width: min(44rem, calc(100% - 2rem)); max-width: none; max-height: min(88vh, 50rem);
+  border-radius: 10px; background: var(--paper); color: var(--ink); overflow: hidden;
+  box-shadow: 0 40px 90px -30px rgba(26, 31, 29, 0.45);
+  opacity: 0; translate: 0 8px;
+  transition: opacity 220ms var(--ease), translate 220ms var(--ease), overlay 220ms allow-discrete, display 220ms allow-discrete;
+}
+dialog.pm[open] { opacity: 1; translate: 0 0; }
+@starting-style { dialog.pm[open] { opacity: 0; translate: 0 8px; } }
+dialog.pm::backdrop {
+  background: rgba(26, 31, 29, 0); backdrop-filter: blur(0);
+  transition: background-color 220ms var(--ease), backdrop-filter 220ms var(--ease), overlay 220ms allow-discrete, display 220ms allow-discrete;
+}
+dialog.pm[open]::backdrop { background: rgba(26, 31, 29, 0.38); backdrop-filter: blur(2px); }
+@starting-style { dialog.pm[open]::backdrop { background: rgba(26, 31, 29, 0); backdrop-filter: blur(0); } }
+html:has(dialog.pm[open]) { overflow: hidden; }
+.pm__scroll { overflow: auto; max-height: inherit; overscroll-behavior: contain; scrollbar-width: thin; }
+.pm__scroll:focus-visible { outline: none; }
+.pm__x {
+  position: absolute; top: 0.75rem; right: 0.75rem; z-index: 2; display: grid; place-items: center;
+  width: 2.2rem; height: 2.2rem; border-radius: 50%; border: 0; cursor: pointer; padding: 0;
+  background: var(--chip-bg); color: var(--ink); font: 400 1.15rem/1 var(--font-body);
+  box-shadow: 0 2px 8px rgba(26, 31, 29, 0.15);
+}
+.pm__x:hover { color: var(--accent); }
+
+@media (max-width: 36rem) {
+  .pd__hero { aspect-ratio: 16 / 10; }
+  .pd__body { padding: 1.25rem 1.25rem 1.5rem; }
+  .pd__title { font-size: 1.4rem; }
+  .pd__btn { flex: 1 1 100%; justify-content: center; }
+  dialog.pm {
+    width: 100%; max-width: 100%; margin: auto 0 0; max-height: 92vh; border-radius: 16px 16px 0 0;
+    opacity: 1; translate: 0 100%;
+    transition-duration: 280ms;
+  }
+  dialog.pm[open] { translate: 0 0; }
+  @starting-style { dialog.pm[open] { opacity: 1; translate: 0 100%; } }
+  dialog.pm::before {
+    content: ''; position: absolute; top: 0.5rem; left: 50%; width: 2.4rem; height: 4px; margin-left: -1.2rem;
+    border-radius: 2px; background: rgba(255, 255, 255, 0.9); z-index: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog.pm, dialog.pm::backdrop { transition: none !important; translate: none; }
+}

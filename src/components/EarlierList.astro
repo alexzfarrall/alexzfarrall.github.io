@@ -1,7 +1,7 @@
 ---
 import { groupByYear } from '../lib/batches';
 
-interface Row { year: number; title: string; chip: string; meta?: string; url?: string; status?: string }
+interface Row { year: number; title: string; chip: string; meta?: string; url?: string; status?: string; details?: boolean }
 interface Props { rows: Row[]; label?: string }
 const { rows, label } = Astro.props;
 const groups = groupByYear(rows);
@@ -18,7 +18,7 @@ const external = (u?: string) => Boolean(u?.startsWith('http'));
             <li class="earlier__row" data-status={r.status}>
               <span class="earlier__chip">{r.chip}</span>
               {r.url
-                ? <a class="earlier__title" href={r.url} {...(external(r.url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{r.title}{external(r.url) && <span class="visually-hidden"> (opens in a new tab)</span>}</a>
+                ? <a class="earlier__title" href={r.url} data-details={r.details ? '' : undefined} {...(external(r.url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{r.title}{external(r.url) && <span class="visually-hidden"> (opens in a new tab)</span>}</a>
                 : <span class="earlier__title">{r.title}</span>}
               {r.meta && <span class="earlier__meta">{r.meta}</span>}
             </li>

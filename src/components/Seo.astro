@@ -13,10 +13,15 @@ interface Props {
   email?: string;
   imageAlt?: string;
   noindex?: boolean;
+  ogImage?: ImageMetadata;
 }
-const { title, description, image, sameAs, jobTitle, email, imageAlt, noindex } = Astro.props;
+const { title, description, image, sameAs, jobTitle, email, imageAlt, noindex, ogImage } = Astro.props;
 const base = Astro.site ?? Astro.url;
-const og = await getImage({ src: image, width: 1200, height: 1200, format: 'jpg', quality: 70 });
+const og = ogImage
+  ? await getImage({ src: ogImage, width: Math.min(1200, ogImage.width), format: 'jpg', quality: 70 })
+  : await getImage({ src: image, width: 1200, height: 1200, format: 'jpg', quality: 70 });
+const ogWidth = Number(og.attributes.width ?? 1200);
+const ogHeight = Number(og.attributes.height ?? 1200);
 const icon32 = await getImage({ src: image, width: 32, height: 32, format: 'png' });
 const icon180 = await getImage({ src: image, width: 180, height: 180, format: 'png' });
 const ogUrl = new URL(og.src, base).href;
@@ -49,10 +54,10 @@ const person = {
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={ogUrl} />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="1200" />
+<meta property="og:image:width" content={String(ogWidth)} />
+<meta property="og:image:height" content={String(ogHeight)} />
 <meta property="og:image:alt" content={imageAlt || 'Dr Alexz Farrall'} />
 <meta property="og:url" content={noindex ? siteRoot : canonical} />
-<meta name="twitter:card" content="summary" />
+<meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
 <meta name="twitter:image" content={ogUrl} />
 {!noindex && <script type="application/ld+json" set:html={serializeJsonLd(person)} />}

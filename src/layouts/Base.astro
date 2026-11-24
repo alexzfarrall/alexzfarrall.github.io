@@ -4,6 +4,7 @@ import '@fontsource-variable/newsreader';
 import '@fontsource-variable/public-sans';
 import '../styles/tokens.css';
 import '../styles/global.css';
+import '../styles/project.css';
 import Seo from '../components/Seo.astro';
 import newsreaderLatin from '@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2?url';
 import publicSansLatin from '@fontsource-variable/public-sans/files/public-sans-latin-wght-normal.woff2?url';
@@ -18,6 +19,8 @@ interface Props {
   email?: string;
   imageAlt?: string;
   noindex?: boolean;
+  /** Sharing image when it differs from the site image (project pages). */
+  ogImage?: ImageMetadata;
 }
 const props = Astro.props;
 ---

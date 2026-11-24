@@ -7,15 +7,20 @@ import { STATUSES } from '../lib/constants';
 import { sortResearch } from '../lib/lists';
 import { splitByPhoto } from '../lib/batches';
 import { resolveOptional } from '../lib/uploads';
+import { projectHref } from '../lib/details';
+import { isProject, researchItems } from '../lib/project';
 
-const items = sortResearch((await getCollection('research')).map((e) => e.data).filter((r) => !r.hidden));
+const items = sortResearch(await researchItems());
 const funders = (await getCollection('funders'))
   .map((e) => e.data)
   .filter((f) => !f.hidden)
   .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
 const { batches, rest } = splitByPhoto(items, (r) => r.pinned || resolveOptional(r.photo) !== undefined, [8, 12]);
 const [visible, more] = batches;
-const rows = rest.map((r) => ({ year: r.year, title: r.title, chip: r.status, meta: r.venue, url: r.url, status: r.status }));
+const rows = rest.map((r) => {
+  const details = isProject(r);
+  return { year: r.year, title: r.title, chip: r.status, meta: r.venue, url: details ? projectHref(r.id) : r.url, status: r.status, details };
+});
 const hasMore = more.length > 0 || rows.length > 0;
 ---
 <section class="section reveal" id="research" aria-labelledby="research-title" data-research>

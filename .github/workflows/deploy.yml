@@ -24,9 +24,9 @@ jobs:
           cache: npm
       - name: Check upload sizes
         run: |
-          big=$(find src/assets/uploads public/logos -type f -size +5M 2>/dev/null || true)
+          big=$(find src/assets/uploads public/logos public/files -type f -size +5M 2>/dev/null || true)
           if [ -n "$big" ]; then
-            echo "::error::These files are larger than 5 MB. Replace them with a smaller version (JPG or PNG, under 2 MB, about 1600 px wide) in Pages CMS > Photos / Logos:"
+            echo "::error::These files are larger than 5 MB. Replace them with a smaller version (photos: JPG or PNG, under 2 MB, about 1600 px wide; PDFs: under 5 MB) in Pages CMS > Photos / Logos / Files:"
             echo "$big"
             exit 1
           fi

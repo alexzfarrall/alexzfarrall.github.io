@@ -1,0 +1,60 @@
+---
+// The content of a project page and of its pop-out (the pop-out script copies this article).
+// Styles live in src/styles/project.css so they are present on the homepage too.
+import { Image } from 'astro:assets';
+import { linkLabel } from '../lib/details';
+import { galleryImages, pdfSize, type ResearchItem } from '../lib/project';
+import { resolveOptional } from '../lib/uploads';
+
+interface Props { item: ResearchItem }
+const { item } = Astro.props;
+const photo = resolveOptional(item.photo);
+const gallery = galleryImages(item);
+const size = pdfSize(item.pdf);
+const where = [item.venue, item.year].filter(Boolean).join(' ');
+const meta = [item.status, item.field, where];
+const external = Boolean(item.url?.startsWith('http'));
+const newTab = { target: '_blank', rel: 'noopener noreferrer' };
+---
+<article class="pd" data-project aria-labelledby="pd-title">
+  {photo && (
+    <div class="pd__hero">
+      <Image src={photo} alt={item.photoAlt ?? ''} widths={[640, 960, 1280]} sizes="(min-width: 46rem) 44rem, 100vw" loading="eager" />
+    </div>
+  )}
+  <div class:list={['pd__body', { 'pd__body--bare': !photo }]}>
+    <p class="pd__meta">
+      {meta.map((m, i) => <>{i > 0 && <span aria-hidden="true">·</span>}<span>{m}</span></>)}
+      {item.highlight && <b>{item.highlight}</b>}
+    </p>
+    <h1 class="pd__title" id="pd-title">{item.title}</h1>
+    {item.summary && <p class="pd__sum">{item.summary}</p>}
+    {gallery.length > 0 && (
+      <div class="pd__gal">
+        {gallery.map((g, i) => (
+          <Image src={g} alt={`${item.title} — photo ${i + 1}`} widths={[320, 480, 640]} sizes="(min-width: 46rem) 14rem, 33vw" />
+        ))}
+      </div>
+    )}
+    {item.results && item.results.length > 0 && (
+      <>
+        <p class="pd__h">Results</p>
+        <ul class="pd__res">{item.results.map((r) => <li>{r}</li>)}</ul>
+      </>
+    )}
+    {(item.url || size) && (
+      <div class="pd__act">
+        {item.url && (
+          <a class="pd__btn pd__btn--p" href={item.url} {...(external ? newTab : {})}>
+            {linkLabel(item)}{external && <> ↗<span class="visually-hidden"> (opens in a new tab)</span></>}
+          </a>
+        )}
+        {size && (
+          <a class="pd__btn" href={item.pdf} {...newTab}>
+            Project overview <small>PDF · {size}</small><span class="visually-hidden"> (opens in a new tab)</span>
+          </a>
+        )}
+      </div>
+    )}
+  </div>
+</article>

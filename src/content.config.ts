@@ -3,6 +3,7 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { FIELDS, RECOGNITION_TYPES, STATUSES } from './lib/constants';
 import { urlField } from './lib/url';
+import { isPdfPath } from './lib/details';
 
 const yaml = (dir: string) => glob({ pattern: '*.yml', base: `./src/content/${dir}` });
 // Pages CMS may write "" or null for an emptied optional field.
@@ -15,6 +16,15 @@ const pinned = opt(z.boolean()).transform((v) => v ?? false);
 const order = opt(z.number().int()).transform((v) => v ?? 1000);
 const year = z.number().int().min(1990).max(2100);
 const text = z.string().trim().min(1);
+// Optional text: spaces-only counts as blank.
+const blank = (v: unknown) => (typeof v === 'string' ? v.trim() || undefined : v === null ? undefined : v);
+const optText = (max: number) => z.preprocess(blank, z.string().max(max).optional());
+// Optional list: a single value becomes a list, blank entries are dropped, extras beyond `max` are ignored.
+const optList = (max: number, item: z.ZodString) =>
+  z.preprocess((v) => {
+    const list = (Array.isArray(v) ? v : [v]).map(blank).filter((x) => x !== undefined);
+    return list.length ? list.slice(0, max) : undefined;
+  }, z.array(item).optional());
 
 const site = defineCollection({
   loader: yaml('site'),
@@ -83,6 +93,15 @@ const research = defineCollection({
       url,
       photo: opt(z.string()),
       photoAlt: opt(z.string()),
+      // Pop-out details (all optional).
+      summary: optText(600),
+      gallery: optList(6, z.string()),
+      results: optList(5, z.string().max(120)),
+      pdf: z.preprocess(
+        blank,
+        z.string().refine(isPdfPath, 'Overview PDF must be a .pdf uploaded to Files (a path like /files/name.pdf).').optional(),
+      ),
+      linkLabel: optText(40),
     })
     .transform(altFrom('title')),
 });

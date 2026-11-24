@@ -1,30 +1,41 @@
 ---
-import type { CollectionEntry } from 'astro:content';
 import { Image } from 'astro:assets';
 import Placeholder from './Placeholder.astro';
 import { resolveOptional } from '../lib/uploads';
+import { projectHref } from '../lib/details';
+import { isProject, type ResearchItem } from '../lib/project';
 
-interface Props { item: CollectionEntry<'research'>['data']; index?: number }
+interface Props { item: ResearchItem; index?: number }
 const { item, index } = Astro.props;
 // Only the default cards take part in the filter's view transition.
 const vt = index !== undefined && index < 8 ? `view-transition-name: research-${index}` : undefined;
 const photo = resolveOptional(item.photo);
-const Inner = item.url ? 'a' : 'div';
+// Items with pop-out details link to their project page (the pop-out script takes over on a plain click).
+const details = isProject(item);
+const href = details ? projectHref(item.id) : item.url;
+const Inner = href ? 'a' : 'div';
 const meta = [item.field, item.venue, item.year]
   .filter(Boolean)
   .join(' · ');
-const external = Boolean(item.url?.startsWith('http'));
-const label = item.url ? `${item.title} (${item.status})${external ? ' (opens in a new tab)' : ''}` : undefined;
-const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+const external = !details && Boolean(item.url?.startsWith('http'));
+const label = details
+  ? `${item.title} (${item.status}) — details`
+  : item.url ? `${item.title} (${item.status})${external ? ' (opens in a new tab)' : ''}` : undefined;
+const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : details ? { 'data-details': '' } : {};
 ---
 <article class="rcard" data-status={item.status} style={vt}>
-  <Inner class="rcard__inner" href={item.url} aria-label={label} {...linkAttrs}>
+  <Inner class="rcard__inner" href={href} aria-label={label} {...linkAttrs}>
     <div class="rcard__img">
       {photo
         ? <Image src={photo} alt={item.photoAlt ?? ''} widths={[320, 480, 640, 800]} sizes="(max-width: 36rem) 72vw, (min-width: 60rem) 20vw, (min-width: 30rem) 33vw, 100vw" />
         : <Placeholder label={item.title} ratio="4 / 3" />}
       <span class="chip">{item.status}</span>
       {item.highlight && <span class="ribbon">{item.highlight}</span>}
+      {details && (
+        <span class="cue" aria-hidden="true">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 1.5v9M1.5 6h9" /></svg>
+        </span>
+      )}
     </div>
     <h3 class="rcard__title">{item.title}</h3>
     <small class="rcard__meta">{meta}</small>
@@ -51,6 +62,12 @@ const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : 
     font: 600 0.62rem var(--font-body); letter-spacing: 0.06em; text-transform: uppercase;
     background: var(--accent); color: #fff; padding: 0.25rem 0.5rem; border-radius: 999px;
   }
+  .cue {
+    position: absolute; top: 0.5rem; right: 0.5rem; display: grid; place-items: center;
+    width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--chip-bg); color: var(--ink);
+    box-shadow: 0 1px 4px rgba(26, 31, 29, 0.12);
+  }
+  .cue svg { width: 0.72rem; height: 0.72rem; }
   .rcard__title {
     font: 400 1.05rem/1.25 var(--font-display); min-height: calc(3 * 1.25em); margin: 0; overflow-wrap: anywhere;
     display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden;
