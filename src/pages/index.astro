@@ -1,0 +1,48 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import { resolveImage } from '../lib/uploads';
+import LogoStrip from '../components/LogoStrip.astro';
+import Ventures from '../components/Ventures.astro';
+import Research from '../components/Research.astro';
+import Recognition from '../components/Recognition.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+
+const entry = await getEntry('site', 'site');
+if (!entry) throw new Error('Missing src/content/site/site.yml');
+const site = entry.data;
+const sameAs = [site.links.linkedin, site.links.scholar, site.links.github].filter((u): u is string => Boolean(u));
+const affiliations = (await getCollection('affiliations'))
+  .map((e) => e.data)
+  .filter((a) => !a.hidden)
+  .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+---
+<Base
+  title={`${site.name} · ${site.headline.replace(/\.$/, '')}`}
+  description={site.description}
+  image={resolveImage(site.socialImage)}
+  name={site.name}
+  sameAs={sameAs}
+  jobTitle={site.headline.replace(/\.$/, '')}
+  email={site.email}
+  imageAlt="Dr Alexz Farrall"
+>
+  <Nav name={site.name} />
+  <main>
+    <Hero
+      pitch={site.subline}
+      credential={site.credential}
+      photo={resolveImage(site.heroPhoto)}
+      photoAlt={site.heroAlt}
+    />
+    <LogoStrip items={affiliations} />
+    <Ventures />
+    <Research />
+    <Recognition />
+    <Contact email={site.email} links={site.links} memberships={site.memberships} />
+  </main>
+  <Footer name={site.name} />
+</Base>

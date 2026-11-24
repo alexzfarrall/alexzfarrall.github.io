@@ -1,0 +1,29 @@
+---
+import { getEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { resolveImage } from '../lib/uploads';
+
+const entry = await getEntry('site', 'site');
+if (!entry) throw new Error('Missing src/content/site/site.yml');
+const site = entry.data;
+---
+<Base
+  title={`Page not found · ${site.name}`}
+  description={site.description}
+  image={resolveImage(site.socialImage)}
+  name={site.name}
+  sameAs={[]}
+  noindex
+>
+  <main class="nf">
+    <h1>Page not found</h1>
+    <p>That page does not exist or has moved.</p>
+    <p><a href="/">Back to the homepage</a></p>
+  </main>
+</Base>
+<style>
+  .nf { max-width: 40rem; margin: 0 auto; padding: var(--space-section) 1.5rem; color: var(--ink); }
+  h1 { font-family: var(--font-display); font-weight: 400; margin: 0 0 1rem; }
+  p { color: var(--ink-soft); margin: 0 0 1rem; }
+  a { color: var(--accent); }
+</style>

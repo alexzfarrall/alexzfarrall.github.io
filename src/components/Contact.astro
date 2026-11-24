@@ -1,0 +1,58 @@
+---
+import { PROBLEM_SUBJECT } from '../lib/mailto';
+
+interface Props { email: string; links: { linkedin?: string; scholar?: string; github?: string }; memberships?: string }
+const { email, links, memberships } = Astro.props;
+const memberList = (memberships ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+const linkList = (
+  [['LinkedIn', links.linkedin], ['Google Scholar', links.scholar], ['GitHub', links.github]] as [string, string | undefined][]
+).filter((pair): pair is [string, string] => Boolean(pair[1]));
+---
+<section class="section contact reveal" id="contact" aria-labelledby="contact-title">
+  <div class="container contact__inner">
+    <h2 class="contact__title" id="contact-title">Bring me a challenge.</h2>
+    <p class="contact__sub">Consulting, collaboration and research partnerships.</p>
+    <form class="problem" action={`mailto:${email}`} method="get" data-problem-box data-email={email}>
+      <label for="problem" class="visually-hidden">Describe your challenge</label>
+      <input type="hidden" name="subject" value={PROBLEM_SUBJECT} />
+      <textarea
+        id="problem"
+        name="body"
+        rows="3"
+        required
+        placeholder="We need to detect crop disease from drone images…"
+      ></textarea>
+      <p id="problem-error" class="problem__error" data-error hidden>Describe your challenge first.</p>
+      <button class="button" type="submit">Send <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="contact__alt">Or email <a href={`mailto:${email}`}>{email}</a></p>
+    {memberList.length > 0 && <p class="contact__members">Member of {memberList.join(' · ')}</p>}
+    {linkList.length > 0 && (
+      <ul class="contact__links" role="list">
+        {linkList.map(([label, url]) => <li><a href={url} rel="me noopener">{label}</a></li>)}
+      </ul>
+    )}
+  </div>
+</section>
+
+<style>
+  .contact { background: var(--paper-2); }
+  .contact__inner { max-width: 40rem; }
+  .contact__title {
+    font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.1; letter-spacing: -0.015em; margin: 0 0 0.5rem;
+  }
+  .contact__sub { color: var(--ink-soft); margin: 0 0 2rem; }
+  .problem { display: grid; gap: 0.75rem; justify-items: start; }
+  .problem textarea {
+    width: 100%; font: inherit; color: var(--ink); resize: vertical;
+    padding: 0.875rem 1rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper);
+    transition: border-color var(--dur) var(--ease);
+  }
+  .problem textarea:focus { outline: 2px solid transparent; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .problem textarea[aria-invalid='true'] { border-color: var(--danger); }
+  .problem__error { margin: 0; font-size: 0.875rem; color: var(--danger); }
+  .contact__alt { margin: 1.5rem 0 0; font-size: 0.9375rem; color: var(--ink-soft); }
+  .contact__members { margin: 0.5rem 0 0; font-size: 0.9375rem; color: var(--ink-soft); }
+  .contact__links { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 1rem 0 0; padding: 0; list-style: none; font-size: 0.9375rem; }
+</style>

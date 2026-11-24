@@ -1,0 +1,56 @@
+---
+import { opticalSize, readLogoDims } from '../lib/logo-size';
+interface Item { name: string; logo?: string; url?: string }
+interface Props { items: Item[] }
+const { items } = Astro.props;
+---
+<section class="strip" aria-labelledby="strip-label">
+  <div class="container"><h2 class="eyebrow" id="strip-label">Worked with</h2></div>
+  <div class="strip__viewport">
+    {[0, 1].map((copy) => (
+      <ul class="strip__track" role="list" aria-hidden={copy === 1 ? 'true' : undefined} inert={copy === 1}>
+        {items.map((it) => {
+          const dims = it.logo ? readLogoDims(it.logo) : null;
+          const size = dims ? opticalSize(dims) : null;
+          const mark = it.logo
+            ? (size
+              ? <img src={it.logo} alt={copy === 0 ? it.name : ''} width={size.width} height={size.height} style={`width:${size.width}px;height:${size.height}px`} loading="lazy" decoding="async" {...(copy === 1 ? { fetchpriority: "low" } : {})} />
+              : <img src={it.logo} alt={copy === 0 ? it.name : ''} height="36" style="height:36px;width:auto" loading="lazy" decoding="async" {...(copy === 1 ? { fetchpriority: "low" } : {})} />)
+            : <span class="wordmark">{it.name}</span>;
+          return <li>{it.url && copy === 0 ? <a href={it.url} {...(it.url.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { rel: 'noopener' })}>{mark}{it.url.startsWith('http') && <span class="visually-hidden"> (opens in a new tab)</span>}</a> : mark}</li>;
+        })}
+      </ul>
+    ))}
+  </div>
+</section>
+
+<style>
+  .strip { padding-block: 1.75rem; border-block: 1px solid var(--rule); }
+  .strip .eyebrow { margin-bottom: 1.5rem; }
+  .strip__viewport {
+    display: flex; overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+  .strip__track {
+    display: flex; align-items: center; justify-content: space-around; gap: 4rem;
+    flex-shrink: 0; min-width: 100%; margin: 0; padding: 0 4rem 0 0; list-style: none;
+    animation: marquee 45s linear infinite;
+  }
+  .strip__track img { display: block; max-width: none; filter: grayscale(1); opacity: 0.75; transition: filter var(--dur) var(--ease), opacity var(--dur) var(--ease); }
+  .strip__track li:hover img { filter: none; opacity: 1; }
+  .strip__track a { display: block; cursor: pointer; }
+  .strip__track a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .wordmark { font-family: var(--font-display); font-size: 1.15rem; color: var(--ink-soft); white-space: nowrap; }
+  .strip__viewport:hover .strip__track,
+  .strip__viewport:focus-within .strip__track { animation-play-state: paused; }
+  @keyframes marquee { to { transform: translateX(-100%); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .strip__viewport { mask-image: none; }
+    .strip__track {
+      animation: none; flex-wrap: wrap; justify-content: flex-start; gap: 1.25rem 3rem;
+      flex-shrink: 1; min-width: 0; padding-inline: var(--gutter);
+    }
+    .strip__track[aria-hidden='true'] { display: none; }
+  }
+</style>

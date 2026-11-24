@@ -1,0 +1,21 @@
+name: Dr Alexz Farrall
+description: Dr Alexz Farrall — engineer, founder and researcher working across health, robotics and agriculture.
+headline: Engineer, founder and researcher.
+subline: I turn messy real-world problems into working systems.
+heroPhoto: /uploads/hero-portrait.jpg
+heroAlt: Dr Alexz Farrall in a dark blazer, looking to the side
+socialImage: /uploads/headshot-square.jpg
+credential:
+  title: Top 50 UK Future Innovators
+  issuer: Universities UK
+  year: 2026
+  mark: "50"
+  kicker: Top
+  caption: Future Innovators
+  url: ""
+email: alexz.farrall@gmail.com
+links:
+  linkedin: ""
+  scholar: ""
+  github: ""
+memberships: IET, IEEE, ACM

@@ -1,0 +1,82 @@
+---
+import { capList, FUNDERS_CAP, FUNDERS_CAP_PHONE } from '../lib/caps';
+interface Funder { name: string; short?: string; url?: string }
+interface Props { funders: Funder[] }
+const { funders } = Astro.props;
+const { shown, rest } = capList(funders, FUNDERS_CAP);
+// Phones show FUNDERS_CAP_PHONE names, unless that would hide a single name.
+const phone = capList(funders, FUNDERS_CAP_PHONE);
+const phoneCapped = phone.rest.length > 0;
+const phoneRest = phone.rest.length;
+const hasDetails = phoneCapped;
+const isWeb = (u: string) => u.startsWith('http');
+const ext = (u: string) => (isWeb(u) ? { target: '_blank', rel: 'noopener noreferrer' } : { rel: 'noopener' });
+---
+<aside class="funders" aria-labelledby="funders-title">
+  <p class="funders__title" id="funders-title">Supported by</p>
+  <ul class="funders__list" role="list">
+    {shown.map((f, i) => (
+      <li class:list={['funders__item', { 'funders__item--mid': phoneCapped && i >= FUNDERS_CAP_PHONE }]}>
+        {f.url
+          ? <a href={f.url} {...ext(f.url)}>{f.name}{isWeb(f.url) && <span class="visually-hidden"> (opens in a new tab)</span>}</a>
+          : f.name}
+      </li>
+    ))}
+  </ul>
+  {hasDetails && (
+    <details class:list={['funders__more', { 'funders__more--phone': rest.length === 0 }]}>
+      <summary>
+        {rest.length > 0 && <span class="funders__n-wide">+{rest.length} more</span>}
+        <span class="funders__n-phone">+{phoneRest} more</span>
+      </summary>
+      {rest.length > 0 && (
+        <ul class="funders__list funders__list--rest" role="list">
+          {rest.map((f) => (
+            <li class="funders__item">
+              {f.url
+                ? <a href={f.url} {...ext(f.url)}>{f.name}{isWeb(f.url) && <span class="visually-hidden"> (opens in a new tab)</span>}</a>
+                : f.name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </details>
+  )}
+</aside>
+
+<style>
+  .funders {
+    grid-column: span 2; height: 100%; box-sizing: border-box;
+    padding: 1.5rem 1.6rem; border-radius: 6px; border: none;
+    background: linear-gradient(150deg, var(--funders-from) 0%, var(--funders-to) 100%);
+    display: flex; flex-direction: column; justify-content: center; color: var(--ink);
+  }
+  @media (max-width: 36rem) { .funders { grid-column: 1 / -1; padding: 1.25rem; } }
+  .funders[hidden] { display: none; }
+  .funders__title {
+    margin: 0 0 0.9rem; font: 500 0.7rem/1 var(--font-body);
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--funders-label);
+  }
+  .funders__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+  .funders__list--rest { margin-top: 0.5rem; }
+  .funders__item { font: 400 1.08rem/1.3 var(--font-display); color: var(--ink); }
+  .funders__item a { color: inherit; text-decoration: none; }
+  .funders__item a:hover, .funders__item a:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+  .funders__item a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .funders__more { margin-top: 0.7rem; }
+  .funders__more summary {
+    cursor: pointer; list-style: none; width: fit-content;
+    font: 500 0.78rem/1.4 var(--font-body); letter-spacing: 0.04em; color: var(--funders-label);
+  }
+  .funders__more summary::-webkit-details-marker { display: none; }
+  .funders__more summary:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .funders__more summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .funders__n-phone { display: none; }
+  @media (max-width: 36rem) {
+    .funders__item--mid { display: none; }
+    .funders:has(.funders__more[open]) .funders__item--mid { display: block; }
+    .funders__n-wide { display: none; }
+    .funders__n-phone { display: inline; }
+  }
+  @media (min-width: 36.01rem) { .funders__more--phone { display: none; } }
+</style>

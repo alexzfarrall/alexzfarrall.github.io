@@ -1,0 +1,67 @@
+---
+import { groupByYear } from '../lib/batches';
+
+interface Row { year: number; title: string; chip: string; meta?: string; url?: string; status?: string }
+interface Props { rows: Row[]; label?: string }
+const { rows, label } = Astro.props;
+const groups = groupByYear(rows);
+const external = (u?: string) => Boolean(u?.startsWith('http'));
+---
+{rows.length > 0 && (
+  <div class="earlier" data-group>
+    {label && <p class="earlier__label">{label}</p>}
+    {groups.map((g) => (
+      <div class="earlier__year" data-group>
+        <h3 class="earlier__heading">{g.year}</h3>
+        <ol class="earlier__list" role="list">
+          {g.items.map((r) => (
+            <li class="earlier__row" data-status={r.status}>
+              <span class="earlier__chip">{r.chip}</span>
+              {r.url
+                ? <a class="earlier__title" href={r.url} {...(external(r.url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{r.title}{external(r.url) && <span class="visually-hidden"> (opens in a new tab)</span>}</a>
+                : <span class="earlier__title">{r.title}</span>}
+              {r.meta && <span class="earlier__meta">{r.meta}</span>}
+            </li>
+          ))}
+        </ol>
+      </div>
+    ))}
+    <p class="earlier__top"><a href="#top">Back to top ↑</a></p>
+  </div>
+)}
+
+<style>
+  .earlier { margin-top: 1.75rem; }
+  .earlier__label {
+    margin: 0 0 0.5rem; font: 500 0.75rem/1.4 var(--font-body);
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .earlier__year { display: grid; grid-template-columns: 4.5rem 1fr; gap: 0 1rem; border-top: 1px solid var(--rule); padding-block: 0.7rem; }
+  .earlier__heading { margin: 0; font: 400 1rem/1.9 var(--font-display); color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .earlier__list { list-style: none; margin: 0; padding: 0; min-width: 0; }
+  .earlier__row {
+    display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) minmax(0, 0.7fr);
+    align-items: baseline; gap: 0.75rem; padding-block: 0.3rem; min-width: 0;
+  }
+  .earlier__chip {
+    font: 600 0.62rem/1.9 var(--font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .earlier__title {
+    font: 400 1.02rem/1.5 var(--font-display); color: var(--ink); text-decoration: none; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  a.earlier__title:hover { text-decoration: underline; text-underline-offset: 3px; }
+  a.earlier__title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .earlier__meta { font: 400 0.8rem/1.5 var(--font-body); color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .earlier__top { margin: 0; padding-top: 0.9rem; border-top: 1px solid var(--rule); font: 400 0.8rem/1.4 var(--font-body); }
+  .earlier__top a { color: var(--ink-faint); text-decoration: none; }
+  .earlier__top a:hover, .earlier__top a:focus-visible { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  @media (max-width: 40rem) {
+    .earlier__year { grid-template-columns: 1fr; gap: 0.2rem; }
+    .earlier__row { grid-template-columns: 1fr; gap: 0.1rem; padding-block: 0.45rem; }
+    .earlier__title, .earlier__meta {
+      white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+    }
+  }
+</style>

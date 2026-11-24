@@ -1,0 +1,14 @@
+---
+import { initials } from '../lib/initials';
+interface Props { label: string; ratio?: string }
+const { label, ratio = '4 / 3' } = Astro.props;
+---
+<div class="placeholder" style={`aspect-ratio: ${ratio}`} aria-hidden="true"><span>{initials(label)}</span></div>
+
+<style>
+  .placeholder {
+    display: grid; place-items: center; width: 100%;
+    background: repeating-linear-gradient(135deg, var(--paper-2) 0 10px, var(--stripe) 10px 20px);
+    font: 300 2.4rem var(--font-display); color: var(--ink-faint);
+  }
+</style>

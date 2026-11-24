@@ -1,0 +1,82 @@
+---
+import { getCollection } from 'astro:content';
+import ResearchCard from './ResearchCard.astro';
+import FundersPanel from './FundersPanel.astro';
+import EarlierList from './EarlierList.astro';
+import { STATUSES } from '../lib/constants';
+import { sortResearch } from '../lib/lists';
+import { splitByPhoto } from '../lib/batches';
+import { resolveOptional } from '../lib/uploads';
+
+const items = sortResearch((await getCollection('research')).map((e) => e.data).filter((r) => !r.hidden));
+const funders = (await getCollection('funders'))
+  .map((e) => e.data)
+  .filter((f) => !f.hidden)
+  .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+const { batches, rest } = splitByPhoto(items, (r) => r.pinned || resolveOptional(r.photo) !== undefined, [8, 12]);
+const [visible, more] = batches;
+const rows = rest.map((r) => ({ year: r.year, title: r.title, chip: r.status, meta: r.venue, url: r.url, status: r.status }));
+const hasMore = more.length > 0 || rows.length > 0;
+---
+<section class="section reveal" id="research" aria-labelledby="research-title" data-research>
+  <div class="container">
+    <h2 class="eyebrow" id="research-title">Research and projects</h2>
+    <div class="filters" role="group" aria-label="Filter research by status" data-filters>
+      <button type="button" aria-pressed="true" data-filter="all">All</button>
+      {STATUSES.map((s) => <button type="button" aria-pressed="false" data-filter={s}>{s}</button>)}
+    </div>
+    <p class="visually-hidden" role="status" aria-live="polite" data-count></p>
+    <div class="rgrid">
+      <div class="rail" role="region" aria-label="Featured research" tabindex="0">
+        {visible.map((r, i) => <ResearchCard item={r} index={i} />)}
+      </div>
+      {funders.length > 0 && <FundersPanel funders={funders} />}
+    </div>
+    {hasMore && (
+      <details class="more" data-more>
+        <summary><span class="more__closed">Show all {items.length}</span><span class="more__open">Show fewer</span></summary>
+        {more.length > 0 && (
+          <div class="rgrid" data-batch="cards">
+            {more.map((r) => <ResearchCard item={r} />)}
+          </div>
+        )}
+        {rows.length > 0 && (
+          <div data-batch="earlier">
+            <EarlierList rows={rows} label="Earlier work" />
+          </div>
+        )}
+      </details>
+    )}
+    <p class="visually-hidden" role="status" aria-live="polite" data-live></p>
+    <p class="empty" data-empty hidden>Nothing here yet.</p>
+  </div>
+</section>
+
+<style>
+  .filters { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.25rem; }
+  .filters button {
+    font: 500 0.8rem var(--font-body); cursor: pointer;
+    padding: 0.35rem 0.8rem; border-radius: 999px;
+    border: 1px solid var(--rule); background: transparent; color: var(--ink-soft);
+    transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  .filters button:hover { border-color: var(--ink-faint); color: var(--ink); }
+  .filters button[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .rgrid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr)); }
+  .rail { display: contents; }
+  @media (max-width: 36rem) {
+    .rgrid:has(> .rail) { display: block; }
+    .rail {
+      display: flex; gap: 0.75rem; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain;
+      margin-inline: calc(-1 * var(--gutter)); padding: 0 var(--gutter) 0.75rem; scroll-padding-inline: var(--gutter);
+      scrollbar-width: none;
+    }
+    .rail::-webkit-scrollbar { display: none; }
+    .rail:focus-visible { outline-offset: -2px; }
+    .rail > :global(.rcard) { flex: 0 0 72vw; scroll-snap-align: start; }
+    .rgrid:has(> .rail) > :global(.funders) { margin-top: 0.5rem; }
+  }
+  .more .rgrid { margin-top: 1rem; }
+  .more summary { border-top: none; }
+  .empty { color: var(--ink-faint); padding-block: 1rem; border-top: 1px solid var(--rule); margin: 0; }
+</style>

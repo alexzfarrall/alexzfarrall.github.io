@@ -1,0 +1,40 @@
+---
+import type { ImageMetadata } from 'astro';
+import '@fontsource-variable/newsreader';
+import '@fontsource-variable/public-sans';
+import '../styles/tokens.css';
+import '../styles/global.css';
+import Seo from '../components/Seo.astro';
+import newsreaderLatin from '@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2?url';
+import publicSansLatin from '@fontsource-variable/public-sans/files/public-sans-latin-wght-normal.woff2?url';
+
+interface Props {
+  title: string;
+  description: string;
+  image: ImageMetadata;
+  name: string;
+  sameAs: string[];
+  jobTitle?: string;
+  email?: string;
+  imageAlt?: string;
+  noindex?: boolean;
+}
+const props = Astro.props;
+---
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preload" as="font" type="font/woff2" href={newsreaderLatin} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={publicSansLatin} crossorigin />
+    <Seo {...props} />
+    <noscript><style>[data-filters],[data-featured-toggle]{display:none}.featured__list li[data-extra][hidden]{display:list-item!important}</style></noscript>
+  </head>
+  <body>
+    <slot />
+    <script>
+      import "../scripts/main";
+    </script>
+  </body>
+</html>

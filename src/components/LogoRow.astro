@@ -1,0 +1,69 @@
+---
+import { opticalSize, readLogoDims } from '../lib/logo-size';
+import { capList, FEATURED_CAP } from '../lib/caps';
+interface Item { name: string; logo?: string; url?: string }
+interface Props { label: string; id: string; items: Item[] }
+const { label, id, items } = Astro.props;
+const { shown, rest } = capList(items, FEATURED_CAP);
+---
+{items.length > 0 && (
+  <div class="featured" aria-labelledby={id}>
+    <p class="featured__label" id={id}>{label}</p>
+    <ul class="featured__list" id={`${id}-list`} role="list">
+      {items.map((it, i) => {
+        const dims = it.logo ? readLogoDims(it.logo) : null;
+        const size = dims ? opticalSize(dims) : null;
+        const mark = it.logo
+          ? (size
+            ? <img src={it.logo} alt={it.name} width={size.width} height={size.height} style={`width:${size.width}px;height:${size.height}px`} loading="lazy" decoding="async" />
+            : <img src={it.logo} alt={it.name} height="28" style="height:28px;width:auto" loading="lazy" decoding="async" />)
+          : <span class="featured__word">{it.name}</span>;
+        return <li data-extra={i >= shown.length ? '' : undefined} hidden={i >= shown.length}>{it.url ? <a href={it.url} {...(it.url.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : { rel: 'noopener' })}>{mark}{it.url.startsWith('http') && <span class="visually-hidden"> (opens in a new tab)</span>}</a> : mark}</li>;
+      })}
+    </ul>
+    {rest.length > 0 && (
+      <button type="button" class="featured__toggle" data-featured-toggle aria-expanded="false" aria-controls={`${id}-list`}>All {items.length}</button>
+    )}
+  </div>
+)}
+
+<style>
+  .featured {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 3rem;
+    margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule);
+  }
+  .featured__label {
+    margin: 0; font: 500 0.75rem var(--font-body); letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .featured__list { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 3rem; margin: 0; padding: 0; list-style: none; }
+  .featured__toggle {
+    font: 500 0.75rem var(--font-body); letter-spacing: 0.04em; cursor: pointer; background: none; border: none;
+    padding: 0.2rem 0; color: var(--ink-faint); border-bottom: 1px solid var(--rule);
+    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  .featured__toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .featured__toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .featured__list a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .featured__list a { cursor: pointer; display: block; color: inherit; text-decoration: none; }
+  .featured__list img {
+    display: block; max-width: none; filter: grayscale(1); opacity: 0.8;
+    transition: filter var(--dur) var(--ease), opacity var(--dur) var(--ease);
+  }
+  .featured__list li:hover img, .featured__list li:focus-within img { filter: none; opacity: 1; }
+  @media (max-width: 36rem) {
+    .featured__list {
+      flex-wrap: nowrap; flex: 1 1 100%; min-width: 0; gap: 2rem; overflow-x: auto; scroll-snap-type: x proximity;
+      scrollbar-width: none; padding-right: 2rem;
+      mask-image: linear-gradient(90deg, #000 85%, transparent);
+    }
+    .featured__list::-webkit-scrollbar { display: none; }
+    .featured__list li { flex: 0 0 auto; scroll-snap-align: start; }
+    .featured:global(.is-open) .featured__list { flex-wrap: wrap; overflow: visible; mask-image: none; padding-right: 0; }
+  }
+  .featured__word {
+    font: 600 1.4rem var(--font-display); color: var(--ink-soft); white-space: nowrap;
+    transition: color var(--dur) var(--ease);
+  }
+  .featured__list li:hover .featured__word, .featured__list li:focus-within .featured__word { color: var(--ink); }
+</style>

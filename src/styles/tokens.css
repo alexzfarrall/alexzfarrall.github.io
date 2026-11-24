@@ -1,0 +1,62 @@
+:root {
+  --font-display: 'Newsreader Variable', 'Newsreader Fallback', Georgia, serif;
+  --font-body: 'Public Sans Variable', 'Public Sans Fallback', system-ui, sans-serif;
+
+  --ink: #1a1f1d;
+  --ink-soft: #4f5a56;
+  --ink-faint: #636d68;
+  --paper: #f7f5f0;
+  --paper-2: #eeebe3;
+  --rule: #dedad0;
+  /* Accent sampled from the sage curtain in the hero photo, darkened for text contrast. */
+  --accent: #3e7466;
+  --accent-soft: #dce9e3;
+  --danger: #a33a2b;
+  --surface: #ffffff;
+  --stripe: #e7e3d9;
+  /* 50 Future Innovators brand colours */
+  --seal-bg: #231719;
+  --seal-ink: #ffffff;
+  --seal-accent: #fab0d5;
+  --seal-chevron: #fb9b05;
+  --seal-ring: rgba(250, 176, 213, 0.35);
+  /* Funders panel: the one approved decorative gradient. */
+  --funders-from: #f3eee5;
+  --funders-to: #ebe3d5;
+  --funders-label: #6f6453;
+  --chip-bg: rgba(247, 245, 240, 0.92);
+
+  --measure: 72rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --space-section: clamp(2.5rem, 6vw, 4.5rem);
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur: 380ms;
+  interpolate-size: allow-keywords;
+}
+
+/*
+ * Metric-matched fallbacks so the swap to the web fonts does not shift layout.
+ * Source: metrics read from the latin woff2 files (hhea ascent/descent/lineGap, unitsPerEm) and from
+ * Georgia / Arial (Windows system fonts). size-adjust = web avg advance / fallback avg advance, measured over
+ * a pangram-plus-prose sample at the fonts' default weight; ascent/descent/line-gap overrides are the web
+ * font's metrics divided by size-adjust (the overrides apply to the already-adjusted size).
+ *   Newsreader: upm 2000, asc 1470, desc 530, gap 0; avg 0.43634 vs Georgia 0.45482 -> 95.94%
+ *   Public Sans: upm 2000, asc 1900, desc 450, gap 0; avg 0.47086 vs Arial 0.46024 -> 102.31%
+ */
+@font-face {
+  font-family: 'Newsreader Fallback';
+  src: local('Georgia');
+  size-adjust: 95.94%;
+  ascent-override: 76.61%;
+  descent-override: 27.62%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Public Sans Fallback';
+  src: local('Arial');
+  size-adjust: 102.31%;
+  ascent-override: 92.85%;
+  descent-override: 21.99%;
+  line-gap-override: 0%;
+}

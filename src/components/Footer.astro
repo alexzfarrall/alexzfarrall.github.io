@@ -1,0 +1,17 @@
+---
+interface Props { name: string }
+const { name } = Astro.props;
+const built = new Date();
+const year = built.getFullYear();
+const updated = built.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+---
+<footer class="footer container">
+  <p>© {year} {name}</p>
+  <p class="footer__updated">Updated {updated}</p>
+</footer>
+
+<style>
+  .footer { padding-block: 2rem 3rem; font-size: 0.875rem; color: var(--ink-faint); }
+  .footer p { margin: 0; }
+  .footer__updated { margin-top: 0.25rem; font-size: 0.75rem; }
+</style>

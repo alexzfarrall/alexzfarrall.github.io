@@ -1,0 +1,149 @@
+media:
+  - name: images
+    label: Photos
+    input: src/assets/uploads
+    output: /uploads
+    extensions: [jpg, jpeg, png, webp, avif]
+    rename: safe
+  - name: logos
+    label: Logos
+    input: public/logos
+    output: /logos
+    extensions: [svg, png]
+    rename: safe
+
+content:
+  - name: site
+    label: Site settings
+    type: file
+    path: src/content/site/site.yml
+    format: yaml
+    fields:
+      - { name: name, label: Display name, type: string, required: true }
+      - { name: description, label: Search description (max 160 characters), type: text, required: true, options: { maxlength: 160 } }
+      - { name: headline, label: Browser tab text, description: "Used for the browser tab title and as your job title for search engines; it does not change the headline shown on the page.", type: string, required: true }
+      - { name: subline, label: Line under the headline, type: string, required: true }
+      - { name: heroPhoto, label: Hero photo, description: "Portrait 4:5 (for example 1200 × 1500 px). JPG or PNG, under 2 MB. iPhone: Settings › Camera › Formats › Most Compatible.", type: image, required: true, options: { media: images } }
+      - { name: heroAlt, label: Hero photo description, type: string, required: true }
+      - { name: socialImage, label: Sharing image (square), description: "Square 1200 × 1200 px. JPG or PNG, under 2 MB.", type: image, required: true, options: { media: images } }
+      - name: credential
+        label: Top credential
+        type: object
+        fields:
+          - { name: title, label: "Award name (ring text, max 30 characters)", type: string, required: true, options: { maxlength: 30 } }
+          - { name: issuer, label: Issued by (max 30 characters), type: string, required: true, options: { maxlength: 30 } }
+          - { name: year, type: number, required: true, options: { min: 1990, max: 2100 } }
+          - { name: mark, label: Seal mark (max 4 characters), type: string, required: true, options: { maxlength: 4 } }
+          - { name: kicker, label: "Small word above the number (max 6 characters, e.g. Top)", type: string, required: false, options: { maxlength: 6 } }
+          - { name: caption, label: Badge words under the number (max 20 characters), type: string, required: true, options: { maxlength: 20 } }
+          - { name: url, label: Link, description: "Paste the full address; https:// is added if missing.", type: string }
+      - { name: email, label: Public email address, type: string, required: true }
+      - name: links
+        label: Social links
+        type: object
+        fields:
+          - { name: linkedin, label: LinkedIn link, description: "Paste the full address; https:// is added if missing.", type: string }
+          - { name: scholar, label: Google Scholar link, description: "Paste the full address; https:// is added if missing.", type: string }
+          - { name: github, label: GitHub link, description: "Paste the full address; https:// is added if missing.", type: string }
+      - { name: memberships, label: "Memberships, comma separated", type: string }
+
+  - name: ventures
+    label: Ventures
+    type: collection
+    path: src/content/ventures
+    format: yaml
+    filename: "{primary}.yml"
+    view: { fields: [name, field, order, hidden], primary: name, default: { sort: order, order: asc } }
+    fields:
+      - { name: name, type: string, required: true }
+      - { name: logo, type: image, description: "Transparent PNG (at least 400 px wide) or SVG, cropped tight. Leave blank to show the name as text.", options: { media: logos } }
+      - { name: field, label: "Areas (max 60 characters, e.g. Robotics, Metamaterials and Healthcare)", type: string, required: true, options: { maxlength: 60 } }
+      - { name: role, type: string, required: true }
+      - { name: startYear, label: Start year, type: number, required: true, options: { min: 1990, max: 2100 } }
+      - { name: endYear, label: End year (leave blank if ongoing), type: number, options: { min: 1990, max: 2100 } }
+      - { name: proof, label: Proof line (max 120 characters), type: string, required: true, options: { maxlength: 120 } }
+      - { name: url, label: Link, description: "Paste the full address; https:// is added if missing.", type: string }
+      - { name: photo, type: image, description: "JPG or PNG, under 2 MB, ideally 1600 px wide. iPhone: Settings › Camera › Formats › Most Compatible.", options: { media: images } }
+      - { name: photoAlt, label: Photo description (optional; the title is used if blank), type: string }
+      - { name: order, label: Display order, description: "Lower shows first. Use 10, 20, 30… Leave blank to put it last.", type: number }
+      - { name: hidden, label: "Hide from the website (draft)", type: boolean }
+
+  - name: research
+    label: Research
+    type: collection
+    path: src/content/research
+    format: yaml
+    filename: "{primary}.yml"
+    view: { fields: [title, status, year, pinned, hidden], primary: title, default: { sort: year, order: desc } }
+    fields:
+      - { name: title, type: string, required: true }
+      - { name: status, type: select, required: true, options: { values: [Paper, Project, Supervised] } }
+      - { name: field, type: select, required: true, options: { values: [Health, Robotics, Agriculture, Other] } }
+      - { name: year, type: number, required: true, options: { min: 1990, max: 2100 } }
+      - { name: venue, label: "Venue (journal, conference, competition)", type: string }
+      - { name: highlight, label: "Highlight (max 40 characters, e.g. Award-winning, In the news)", type: string, options: { maxlength: 40 } }
+      - { name: url, label: Link, description: "Paste the full address; https:// is added if missing.", type: string }
+      - { name: photo, label: Thumbnail, type: image, description: "JPG or PNG, under 2 MB, ideally 1600 px wide. iPhone: Settings › Camera › Formats › Most Compatible.", options: { media: images } }
+      - { name: photoAlt, label: Photo description (optional; the title is used if blank), type: string }
+      - { name: pinned, label: "Pin to the top", type: boolean }
+      - { name: hidden, label: "Hide from the website (draft)", type: boolean }
+
+  - name: recognition
+    label: Recognition
+    type: collection
+    path: src/content/recognition
+    format: yaml
+    filename: "{primary}.yml"
+    view: { fields: [title, type, year, pinned, hidden], primary: title, default: { sort: year, order: desc } }
+    fields:
+      - { name: title, type: string, required: true }
+      - { name: type, type: select, required: true, options: { values: [Award, Invited, Speaker, Media] } }
+      - { name: organisation, type: string }
+      - { name: year, type: number, required: true, options: { min: 1990, max: 2100 } }
+      - { name: url, label: Link, description: "Paste the full address; https:// is added if missing.", type: string }
+      - { name: photo, type: image, description: "JPG or PNG, under 2 MB, ideally 1600 px wide. iPhone: Settings › Camera › Formats › Most Compatible.", options: { media: images } }
+      - { name: photoAlt, label: Photo description (optional; the title is used if blank), type: string }
+      - { name: pinned, label: "Pin to the top", type: boolean }
+      - { name: hidden, label: "Hide from the website (draft)", type: boolean }
+
+  - name: affiliations
+    label: Worked with (logo strip)
+    type: collection
+    path: src/content/affiliations
+    format: yaml
+    filename: "{primary}.yml"
+    view: { fields: [name, order, hidden], primary: name, default: { sort: order, order: asc } }
+    fields:
+      - { name: name, type: string, required: true }
+      - { name: logo, type: image, description: "Transparent PNG (at least 400 px wide) or SVG, cropped tight. Leave blank to show the name as text.", options: { media: logos } }
+      - { name: url, label: Link, description: "Paste the full address; https:// is added if missing.", type: string }
+      - { name: order, label: Display order, description: "Lower shows first. Use 10, 20, 30… Leave blank to put it last.", type: number }
+      - { name: hidden, label: "Hide from the website (draft)", type: boolean }
+
+  - name: funders
+    label: Funders (research)
+    type: collection
+    path: src/content/funders
+    format: yaml
+    filename: "{primary}.yml"
+    view: { fields: [name, short, order, hidden], primary: name, default: { sort: order, order: asc } }
+    fields:
+      - { name: name, label: Full name, type: string, required: true }
+      - { name: short, label: "Acronym (optional, max 12 characters, e.g. ERC)", type: string, options: { maxlength: 12 } }
+      - { name: url, label: Link, description: "Paste the full address; https:// is added if missing.", type: string }
+      - { name: order, label: Display order, description: "Lower shows first. Use 10, 20, 30… Leave blank to put it last.", type: number }
+      - { name: hidden, label: "Hide from the website (draft)", type: boolean }
+
+  - name: press
+    label: Featured in (media logos)
+    type: collection
+    path: src/content/press
+    format: yaml
+    filename: "{primary}.yml"
+    view: { fields: [name, order, hidden], primary: name, default: { sort: order, order: asc } }
+    fields:
+      - { name: name, type: string, required: true }
+      - { name: logo, type: image, description: "Transparent PNG (at least 400 px wide) or SVG, cropped tight. Leave blank to show the name as text.", options: { media: logos } }
+      - { name: url, label: Link, description: "Paste the full address; https:// is added if missing.", type: string }
+      - { name: order, label: Display order, description: "Lower shows first. Use 10, 20, 30… Leave blank to put it last.", type: number }
+      - { name: hidden, label: "Hide from the website (draft)", type: boolean }

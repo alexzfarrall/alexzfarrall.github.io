@@ -1,0 +1,81 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Check upload sizes
+        run: |
+          big=$(find src/assets/uploads public/logos -type f -size +5M 2>/dev/null || true)
+          if [ -n "$big" ]; then
+            echo "::error::These files are larger than 5 MB. Replace them with a smaller version (JPG or PNG, under 2 MB, about 1600 px wide) in Pages CMS > Photos / Logos:"
+            echo "$big"
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run test:build
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: withastro/action@v6
+        with:
+          node-version: 24
+
+  deploy:
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
+
+  notify:
+    needs: [test, build, deploy]
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write
+    steps:
+      - name: Open an issue explaining the failed publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Your last edit did not publish" \
+            --body "The website did not update, and the previous version is still live. Nothing has been lost.
+
+          See what went wrong: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+
+          Usual causes: the hero or sharing photo was deleted, a required field was left empty, a year is outside 1990 to 2100, or a file is over 5 MB.
+
+          To undo: in Pages CMS open the entry you changed and use History to go back, or simply edit it again and save."

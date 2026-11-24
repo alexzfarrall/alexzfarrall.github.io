@@ -1,0 +1,53 @@
+---
+import { getCollection } from 'astro:content';
+import RecognitionCard from './RecognitionCard.astro';
+import EarlierList from './EarlierList.astro';
+import LogoRow from './LogoRow.astro';
+import { sortNewestFirst } from '../lib/lists';
+import { splitByPhoto } from '../lib/batches';
+import { resolveOptional } from '../lib/uploads';
+
+const items = sortNewestFirst((await getCollection('recognition')).map((e) => e.data).filter((r) => !r.hidden));
+const { batches, rest } = splitByPhoto(items, (r) => r.pinned || resolveOptional(r.photo) !== undefined, [6]);
+const visible = batches[0];
+const rows = rest.map((r) => ({ year: r.year, title: r.title, chip: r.type, meta: r.organisation, url: r.url }));
+const press = (await getCollection('press'))
+  .map((e) => e.data)
+  .filter((p) => !p.hidden)
+  .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+---
+<section class="section reveal" id="recognition" aria-labelledby="recognition-title">
+  <div class="container">
+    <h2 class="eyebrow" id="recognition-title">Recognition and media</h2>
+    <div class="recgrid" style={`--cols:${Math.max(1, Math.min(3, visible.length))}`}>
+      <div class="rail" role="region" aria-label="Featured recognition" tabindex="0">
+        {visible.map((r) => <RecognitionCard item={r} />)}
+      </div>
+    </div>
+    {rows.length > 0 && (
+      <details class="more" data-more>
+        <summary><span class="more__closed">Show all {items.length}</span><span class="more__open">Show fewer</span></summary>
+        <EarlierList rows={rows} />
+      </details>
+    )}
+    <LogoRow label="Featured in" id="featured-label" items={press} />
+  </div>
+</section>
+
+<style>
+  .recgrid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
+  /* Wide screens: rows of three, so six cards make two full rows instead of 4 + 2. */
+  @media (min-width: 48rem) { .recgrid { grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); } }
+  .rail { display: contents; }
+  @media (max-width: 36rem) {
+    .recgrid { display: block; }
+    .rail {
+      display: flex; gap: 0.75rem; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain;
+      margin-inline: calc(-1 * var(--gutter)); padding: 0 var(--gutter) 0.75rem; scroll-padding-inline: var(--gutter);
+      scrollbar-width: none;
+    }
+    .rail::-webkit-scrollbar { display: none; }
+    .rail:focus-visible { outline-offset: -2px; }
+    .rail > :global(.rec) { flex: 0 0 72vw; scroll-snap-align: start; }
+  }
+</style>

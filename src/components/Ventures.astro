@@ -1,0 +1,26 @@
+---
+import { getCollection } from 'astro:content';
+import VentureCard from './VentureCard.astro';
+
+const ventures = (await getCollection('ventures'))
+  .map((e) => e.data)
+  .filter((v) => !v.hidden)
+  .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+---
+<section class="section reveal" id="ventures" aria-labelledby="ventures-title">
+  <div class="container">
+    <h2 class="eyebrow" id="ventures-title">Ventures</h2>
+    <ul class="ventures" role="list">
+      {ventures.map((v) => <li><VentureCard venture={v} /></li>)}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .ventures > li { display: flex; }
+  .ventures > li > :global(*) { flex: 1; }
+  .ventures {
+    display: grid; gap: 1.25rem; margin: 0; padding: 0; list-style: none;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  }
+</style>

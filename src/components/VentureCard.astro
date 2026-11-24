@@ -1,0 +1,59 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import Placeholder from './Placeholder.astro';
+import { resolveOptional } from '../lib/uploads';
+import { yearRange } from '../lib/format';
+
+interface Props { venture: CollectionEntry<'ventures'>['data'] }
+const { venture: v } = Astro.props;
+const photo = resolveOptional(v.photo);
+const Card = v.url ? 'a' : 'div';
+const external = Boolean(v.url?.startsWith('http'));
+const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+---
+<Card class="card" href={v.url} data-venture {...linkAttrs}>
+  <div class="card__img">
+    {photo
+      ? <Image src={photo} alt={v.photoAlt ?? ''} widths={[400, 640, 800]} sizes="(min-width: 60rem) 30vw, 100vw" />
+      : <Placeholder label={v.name} ratio="16 / 10" />}
+    {v.logo && <img class="card__logo" src={v.logo} alt="" height="28" />}
+  </div>
+  <div class="card__body">
+    <span class="card__role">{v.role}</span>
+    <h3 class="card__name">{v.name}{external && <span class="visually-hidden"> (opens in a new tab)</span>}</h3>
+    <p class="card__proof">{v.proof}</p>
+    <p class="card__meta">{yearRange(v.startYear, v.endYear)} · {v.field}</p>
+  </div>
+</Card>
+
+<style>
+  .card {
+    display: flex; flex-direction: column; height: 100%;
+    border: 1px solid var(--rule); border-radius: 4px; overflow: hidden;
+    background: var(--surface); color: inherit; text-decoration: none;
+    transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  a.card { cursor: pointer; }
+  a.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  a.card:hover { transform: translateY(-3px); border-color: var(--ink-faint); color: inherit; }
+  .card__img { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: var(--paper-2); }
+  .card__img :global(img:not(.card__logo)) { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur) var(--ease); }
+  a.card:hover .card__img :global(img:not(.card__logo)) { transform: scale(1.04); }
+  .card__logo {
+    position: absolute; left: 0.75rem; top: 0.75rem; height: 28px; width: auto;
+    filter: grayscale(1); transition: filter var(--dur) var(--ease);
+  }
+  .card:hover .card__logo { filter: none; }
+  .card__body { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; padding: 1.1rem 1.2rem 1.3rem; }
+  .card__role { font: 600 0.7rem var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+  .card__name {
+    font: 400 1.6rem/1.1 var(--font-display); margin: 0; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+  }
+  .card__proof {
+    margin: 0.35rem 0 0; font-size: 0.92rem; color: var(--ink-soft);
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden;
+  }
+  .card__meta { margin: auto 0 0; padding-top: 0.35rem; font-size: 0.8rem; color: var(--ink-faint); overflow-wrap: anywhere; }
+</style>

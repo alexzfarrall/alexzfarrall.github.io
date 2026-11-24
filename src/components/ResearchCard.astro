@@ -1,0 +1,62 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import Placeholder from './Placeholder.astro';
+import { resolveOptional } from '../lib/uploads';
+
+interface Props { item: CollectionEntry<'research'>['data']; index?: number }
+const { item, index } = Astro.props;
+// Only the default cards take part in the filter's view transition.
+const vt = index !== undefined && index < 8 ? `view-transition-name: research-${index}` : undefined;
+const photo = resolveOptional(item.photo);
+const Inner = item.url ? 'a' : 'div';
+const meta = [item.field, item.venue, item.year]
+  .filter(Boolean)
+  .join(' · ');
+const external = Boolean(item.url?.startsWith('http'));
+const label = item.url ? `${item.title} (${item.status})${external ? ' (opens in a new tab)' : ''}` : undefined;
+const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+---
+<article class="rcard" data-status={item.status} style={vt}>
+  <Inner class="rcard__inner" href={item.url} aria-label={label} {...linkAttrs}>
+    <div class="rcard__img">
+      {photo
+        ? <Image src={photo} alt={item.photoAlt ?? ''} widths={[320, 480, 640, 800]} sizes="(max-width: 36rem) 72vw, (min-width: 60rem) 20vw, (min-width: 30rem) 33vw, 100vw" />
+        : <Placeholder label={item.title} ratio="4 / 3" />}
+      <span class="chip">{item.status}</span>
+      {item.highlight && <span class="ribbon">{item.highlight}</span>}
+    </div>
+    <h3 class="rcard__title">{item.title}</h3>
+    <small class="rcard__meta">{meta}</small>
+  </Inner>
+</article>
+
+<style>
+  .rcard { margin: 0; height: 100%; }
+  .rcard__inner { display: flex; height: 100%; flex-direction: column; gap: 0.55rem; color: inherit; text-decoration: none; }
+  .rcard__img { position: relative; aspect-ratio: 4 / 3; border-radius: 3px; overflow: hidden; background: var(--paper-2); }
+  .rcard__img :global(img) { width: 100%; height: 100%; object-fit: cover; transition: transform var(--dur) var(--ease); }
+  a.rcard__inner { cursor: pointer; }
+  a.rcard__inner:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  a.rcard__inner:hover .rcard__img :global(img) { transform: scale(1.05); }
+  a.rcard__inner:hover .rcard__title { text-decoration: underline; text-underline-offset: 3px; }
+  .chip {
+    position: absolute; left: 0.5rem; top: 0.5rem;
+    font: 600 0.62rem var(--font-body); letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--chip-bg); color: var(--ink); padding: 0.25rem 0.5rem; border-radius: 999px;
+  }
+  .ribbon {
+    position: absolute; left: 0.5rem; right: 0.5rem; bottom: 0.5rem; width: max-content; max-width: calc(100% - 1rem);
+    margin-left: auto; text-align: right;
+    font: 600 0.62rem var(--font-body); letter-spacing: 0.06em; text-transform: uppercase;
+    background: var(--accent); color: #fff; padding: 0.25rem 0.5rem; border-radius: 999px;
+  }
+  .rcard__title {
+    font: 400 1.05rem/1.25 var(--font-display); min-height: calc(3 * 1.25em); margin: 0; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden;
+  }
+  .rcard__meta {
+    color: var(--ink-faint); font-size: 0.78rem; line-height: 1.35; min-height: 1.35em; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; line-clamp: 1; overflow: hidden;
+  }
+</style>

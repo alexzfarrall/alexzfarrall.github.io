@@ -1,0 +1,26 @@
+---
+interface Props { name: string }
+const { name } = Astro.props;
+---
+<header class="nav container">
+  <a class="nav__name" href="#top">{name}</a>
+  <nav aria-label="Sections">
+    <a href="#ventures">Ventures</a>
+    <a href="#research">Research</a>
+    <a href="#recognition">Recognition</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<style>
+  .nav { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-block: 1.25rem; }
+  .nav__name { font: 500 1.05rem var(--font-display); text-decoration: none; white-space: nowrap; }
+  nav { display: flex; gap: clamp(1rem, 3vw, 1.5rem); font-size: 0.9rem; }
+  nav a { text-decoration: none; color: var(--ink-soft); }
+  nav a:hover { color: var(--accent); }
+  @media (max-width: 36rem) {
+    /* Five items no longer fit one row at 375px: the links drop under the name. */
+    .nav { gap: 0.4rem 0.75rem; flex-wrap: wrap; }
+    nav { gap: 1.1rem; font-size: 0.8rem; }
+  }
+</style>

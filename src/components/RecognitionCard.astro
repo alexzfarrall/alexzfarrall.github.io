@@ -1,0 +1,42 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import Placeholder from './Placeholder.astro';
+import { resolveOptional } from '../lib/uploads';
+
+interface Props { item: CollectionEntry<'recognition'>['data'] }
+const { item } = Astro.props;
+const photo = resolveOptional(item.photo);
+const Inner = item.url ? 'a' : 'div';
+const external = Boolean(item.url?.startsWith('http'));
+const label = item.url ? `${item.title} (${item.type}, ${item.year})${external ? ' (opens in a new tab)' : ''}` : undefined;
+const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+---
+<article class="rec" data-recognition>
+  <Inner class="rec__inner" href={item.url} aria-label={label} {...linkAttrs}>
+    <div class="rec__img">
+      {photo
+        ? <Image src={photo} alt={item.photoAlt ?? ''} widths={[320, 480, 640]} sizes="(max-width: 36rem) 72vw, (min-width: 60rem) 25vw, (min-width: 40rem) 33vw, 100vw" />
+        : <Placeholder label={item.title} ratio="3 / 2" />}
+    </div>
+    <span class="rec__type">{item.type} · {item.year}</span>
+    <h3 class="rec__title">{item.title}</h3>
+    {item.organisation && <small class="rec__org">{item.organisation}</small>}
+  </Inner>
+</article>
+
+<style>
+  .rec { margin: 0; height: 100%; border-top: 2px solid var(--ink); padding-top: 0.9rem; }
+  .rec__inner { display: flex; flex-direction: column; height: 100%; gap: 0.6rem; color: inherit; text-decoration: none; }
+  .rec__img { aspect-ratio: 3 / 2; border-radius: 3px; overflow: hidden; background: var(--paper-2); }
+  .rec__img :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .rec__type { font: 600 0.65rem var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+  .rec__title {
+    font: 400 1.25rem/1.2 var(--font-display); margin: 0; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden;
+  }
+  .rec__org { color: var(--ink-faint); margin-top: auto; }
+  a.rec__inner { cursor: pointer; }
+  a.rec__inner:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  a.rec__inner:hover .rec__title { text-decoration: underline; text-underline-offset: 3px; }
+</style>
