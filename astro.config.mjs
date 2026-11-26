@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
 
-// Change `site` if a custom domain or a non-user-site repo is used (Task 13).
+// The site lives at the custom domain alexzfarrall.com (DNS at Namecheap, Pages custom domain set in repo settings).
 export default defineConfig({
-  site: 'https://alexzfarrall.github.io',
+  site: 'https://alexzfarrall.com',
 });

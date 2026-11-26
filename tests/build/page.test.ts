@@ -317,9 +317,9 @@ describe('built page', () => {
   });
 
   it('ships robots.txt, a sitemap and a noindex 404 page', () => {
-    expect(readFileSync('dist/robots.txt', 'utf8')).toContain('Sitemap: https://alexzfarrall.github.io/sitemap.xml');
+    expect(readFileSync('dist/robots.txt', 'utf8')).toContain('Sitemap: https://alexzfarrall.com/sitemap.xml');
     const sitemap = readFileSync('dist/sitemap.xml', 'utf8');
-    expect(sitemap).toContain('<loc>https://alexzfarrall.github.io/</loc>');
+    expect(sitemap).toContain('<loc>https://alexzfarrall.com/</loc>');
     expect(sitemap).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
     expect(existsSync('dist/404.html')).toBe(true);
     expect(readFileSync('dist/404.html', 'utf8')).toMatch(/<meta name="robots" content="noindex"/);
