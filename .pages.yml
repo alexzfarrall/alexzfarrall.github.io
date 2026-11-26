@@ -43,7 +43,7 @@ content:
           - { name: kicker, label: "Small word above the number (max 6 characters, e.g. Top)", type: string, required: false, options: { maxlength: 6 } }
           - { name: caption, label: Badge words under the number (max 20 characters), type: string, required: true, options: { maxlength: 20 } }
           - { name: url, label: Link, description: "Paste the full address; https:// is added if missing.", type: string }
-      - { name: email, label: Public email address, type: string, required: true }
+      - { name: formKey, label: "Contact form key", type: string, description: "From web3forms.com. Messages from the Bring me a challenge form are sent to the email this key was made with. Your email is never shown on the site." }
       - name: links
         label: Social links
         type: object

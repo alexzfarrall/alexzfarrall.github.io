@@ -49,7 +49,8 @@ const site = defineCollection({
       caption: text.max(20),
       url,
     }),
-    email: z.preprocess((v) => (typeof v === 'string' ? v.trim() : v), z.email()),
+    // Key from web3forms.com: challenge-form messages go to the email it was created with. Public by design; not your address.
+    formKey: opt(z.string().trim()),
     links: z.object({ linkedin: url, scholar: url, github: url }),
     memberships: opt(z.string()),
   }),

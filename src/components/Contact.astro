@@ -1,8 +1,7 @@
 ---
-import { PROBLEM_SUBJECT } from '../lib/mailto';
-
-interface Props { email: string; links: { linkedin?: string; scholar?: string; github?: string }; memberships?: string }
-const { email, links, memberships } = Astro.props;
+interface Props { formKey?: string; links: { linkedin?: string; scholar?: string; github?: string }; memberships?: string }
+const { formKey, links, memberships } = Astro.props;
+const siteUrl = Astro.site ? new URL('/thanks/', Astro.site).href : '/thanks/';
 const memberList = (memberships ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 const linkList = (
   [['LinkedIn', links.linkedin], ['Google Scholar', links.scholar], ['GitHub', links.github]] as [string, string | undefined][]
@@ -12,20 +11,25 @@ const linkList = (
   <div class="container contact__inner">
     <h2 class="contact__title" id="contact-title">Bring me a challenge.</h2>
     <p class="contact__sub">Consulting, collaboration and research partnerships.</p>
-    <form class="problem" action={`mailto:${email}`} method="get" data-problem-box data-email={email}>
-      <label for="problem" class="visually-hidden">Describe your challenge</label>
-      <input type="hidden" name="subject" value={PROBLEM_SUBJECT} />
-      <textarea
-        id="problem"
-        name="body"
-        rows="3"
-        required
-        placeholder="We need to detect crop disease from drone images…"
-      ></textarea>
-      <p id="problem-error" class="problem__error" data-error hidden>Describe your challenge first.</p>
-      <button class="button" type="submit">Send <span aria-hidden="true">→</span></button>
-    </form>
-    <p class="contact__alt">Or email <a href={`mailto:${email}`}>{email}</a></p>
+    {formKey && (
+      <form class="problem" action="https://api.web3forms.com/submit" method="POST" data-problem-box>
+        <input type="hidden" name="access_key" value={formKey} />
+        <input type="hidden" name="subject" value="New challenge from alexzfarrall.com" />
+        <input type="hidden" name="from_name" value="alexzfarrall.com" />
+        <input type="hidden" name="redirect" value={siteUrl} />
+        <input type="checkbox" name="botcheck" class="problem__trap" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <label for="problem" class="visually-hidden">Describe your challenge</label>
+        <textarea id="problem" name="message" rows="3" required placeholder="We need to detect crop disease from drone images…"></textarea>
+        <div class="problem__row">
+          <label class="visually-hidden" for="problem-name">Your name (optional)</label>
+          <input id="problem-name" name="name" type="text" autocomplete="name" placeholder="Your name (optional)" />
+          <label class="visually-hidden" for="problem-email">Your email</label>
+          <input id="problem-email" name="email" type="email" autocomplete="email" required placeholder="Your email, so I can reply" />
+        </div>
+        <p id="problem-error" class="problem__error" data-error role="alert" hidden></p>
+        <button class="button" type="submit">Send <span aria-hidden="true">→</span></button>
+      </form>
+    )}
     {memberList.length > 0 && <p class="contact__members">Member of {memberList.join(' · ')}</p>}
     {linkList.length > 0 && (
       <ul class="contact__links" role="list">
@@ -44,15 +48,20 @@ const linkList = (
   }
   .contact__sub { color: var(--ink-soft); margin: 0 0 2rem; }
   .problem { display: grid; gap: 0.75rem; justify-items: start; }
-  .problem textarea {
+  .problem textarea, .problem input:not([type='hidden']):not(.problem__trap) {
     width: 100%; font: inherit; color: var(--ink); resize: vertical;
     padding: 0.875rem 1rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper);
     transition: border-color var(--dur) var(--ease);
   }
-  .problem textarea:focus { outline: 2px solid transparent; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-  .problem textarea[aria-invalid='true'] { border-color: var(--danger); }
+  .problem textarea:focus, .problem input:focus { outline: 2px solid transparent; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .problem [aria-invalid='true'] { border-color: var(--danger); }
   .problem__error { margin: 0; font-size: 0.875rem; color: var(--danger); }
-  .contact__alt { margin: 1.5rem 0 0; font-size: 0.9375rem; color: var(--ink-soft); }
-  .contact__members { margin: 0.5rem 0 0; font-size: 0.9375rem; color: var(--ink-soft); }
+  .problem__row { display: grid; gap: 0.75rem; width: 100%; grid-template-columns: 1fr 1.4fr; }
+  @media (max-width: 36rem) { .problem__row { grid-template-columns: 1fr; } }
+  .problem input::placeholder, .problem textarea::placeholder { color: var(--ink-faint); }
+  .problem__trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  :global(.problem__done) { margin: 0; padding: 1rem 0; font-family: var(--font-display); font-size: 1.25rem; color: var(--ink); }
+  :global(.problem__done:focus) { outline: none; }
+  .contact__members { margin: 1.5rem 0 0; font-size: 0.9375rem; color: var(--ink-soft); }
   .contact__links { display: flex; flex-wrap: wrap; gap: 1.5rem; margin: 1rem 0 0; padding: 0; list-style: none; font-size: 0.9375rem; }
 </style>

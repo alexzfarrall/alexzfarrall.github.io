@@ -1,100 +1,103 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { initProblemBox, initProblemBoxes } from '../../src/scripts/problem-box';
+import { initProblemBox, initProblemBoxes, isEmail, type Send } from '../../src/scripts/problem-box';
 
 let form: HTMLFormElement;
-let field: HTMLTextAreaElement;
+let message: HTMLTextAreaElement;
+let email: HTMLInputElement;
 let error: HTMLElement;
-let navigate: Mock<(url: string) => void>;
+let send: Mock<Send>;
 
 const submit = () => form.dispatchEvent(new Event('submit', { cancelable: true }));
+const flush = () => new Promise((r) => setTimeout(r, 0));
 
 beforeEach(() => {
   document.body.innerHTML = `
-    <form data-problem-box data-email="a@b.co">
-      <textarea required></textarea>
-      <p id="err" data-error hidden>Describe your problem first.</p>
-      <button type="submit">Send</button>
+    <form data-problem-box action="https://api.web3forms.com/submit" method="POST">
+      <textarea name="message" required></textarea>
+      <input name="name" />
+      <input name="email" type="email" required />
+      <p id="err" data-error hidden></p>
+      <button type="submit">Send <span>→</span></button>
     </form>`;
   form = document.querySelector('form')!;
-  field = form.querySelector('textarea')!;
+  message = form.querySelector('textarea')!;
+  email = form.querySelector('input[name="email"]')!;
   error = form.querySelector<HTMLElement>('[data-error]')!;
-  navigate = vi.fn<(url: string) => void>();
-  initProblemBox(form, navigate);
+  send = vi.fn<Send>().mockResolvedValue(true);
+  initProblemBox(form, send);
 });
 
-describe('problem box', () => {
+describe('isEmail', () => {
+  it('accepts normal addresses and rejects incomplete ones', () => {
+    expect(isEmail('a.b@c.co')).toBe(true);
+    expect(isEmail('  a@b.org ')).toBe(true);
+    for (const bad of ['', 'a', 'a@', 'a@b', 'a@b.c', 'a b@c.com', '@c.com']) expect(isEmail(bad)).toBe(false);
+  });
+});
+
+describe('challenge form', () => {
   it('turns off native validation so the inline message is used', () => {
     expect(form.noValidate).toBe(true);
   });
 
-  it('shows an inline error and does not navigate when empty', () => {
-    field.value = '   ';
+  it('asks for the challenge first and does not send', () => {
+    email.value = 'a@b.co';
     submit();
-    expect(navigate).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
     expect(error.hidden).toBe(false);
-    expect(field.getAttribute('aria-invalid')).toBe('true');
-    expect(field.getAttribute('aria-describedby')).toBe('err');
+    expect(error.textContent).toMatch(/challenge/);
+    expect(message.getAttribute('aria-invalid')).toBe('true');
+    expect(message.getAttribute('aria-describedby')).toBe('err');
   });
 
-  it('has no aria-describedby before an error', () => {
-    expect(field.hasAttribute('aria-describedby')).toBe(false);
+  it('asks for a valid email and does not send', () => {
+    message.value = 'Detect crop disease';
+    email.value = 'not-an-email';
+    submit();
+    expect(send).not.toHaveBeenCalled();
+    expect(error.textContent).toMatch(/email/);
+    expect(email.getAttribute('aria-invalid')).toBe('true');
   });
 
   it('clears the error as soon as the visitor types', () => {
     submit();
-    field.value = 'x';
-    field.dispatchEvent(new Event('input'));
+    message.value = 'x';
+    message.dispatchEvent(new Event('input'));
     expect(error.hidden).toBe(true);
-    expect(field.hasAttribute('aria-invalid')).toBe(false);
-    expect(field.hasAttribute('aria-describedby')).toBe(false);
+    expect(message.hasAttribute('aria-invalid')).toBe(false);
   });
 
-  it('opens a pre-filled email when there is text', () => {
-    field.value = 'Detect crop disease';
+  it('sends a valid form and replaces it with a thank-you naming their email', async () => {
+    message.value = 'Detect crop disease';
+    email.value = ' a@b.co ';
     submit();
-    expect(navigate).toHaveBeenCalledWith(
-      'mailto:a@b.co?subject=A%20problem%20for%20you&body=Detect%20crop%20disease',
-    );
+    await flush();
+    expect(send).toHaveBeenCalledWith(form);
+    const done = document.querySelector('.problem__done');
+    expect(done?.textContent).toBe("Thank you. I'll reply to a@b.co soon.");
+    expect(document.activeElement).toBe(done);
+    expect(document.querySelector('form')).toBeNull();
   });
 
-  it('does nothing without a form', () => {
-    expect(() => initProblemBox(null, navigate)).not.toThrow();
-  });
-});
-
-describe('input field', () => {
-  const build = (id: string) => `
-    <form data-problem-box data-email="a@b.co" id="${id}">
-      <input name="body" required />
-      <p data-error hidden>Describe your challenge first.</p>
-      <button type="submit">Send</button>
-    </form>`;
-
-  it('works like the textarea', () => {
-    document.body.innerHTML = build('f');
-    const f = document.querySelector('form')!;
-    const nav = vi.fn<(url: string) => void>();
-    initProblemBox(f, nav);
-    const input = f.querySelector('input')!;
-    f.dispatchEvent(new Event('submit', { cancelable: true }));
-    expect(nav).not.toHaveBeenCalled();
-    expect(f.querySelector<HTMLElement>('[data-error]')!.hidden).toBe(false);
-    input.value = 'Drones';
-    f.dispatchEvent(new Event('submit', { cancelable: true }));
-    expect(nav).toHaveBeenCalledWith('mailto:a@b.co?subject=A%20problem%20for%20you&body=Drones');
+  it('keeps the form and offers a retry when sending fails', async () => {
+    send.mockResolvedValue(false);
+    message.value = 'Detect crop disease';
+    email.value = 'a@b.co';
+    submit();
+    await flush();
+    expect(document.querySelector('form')).toBe(form);
+    expect(error.hidden).toBe(false);
+    expect(error.textContent).toMatch(/try again/);
+    const button = form.querySelector('button')!;
+    expect(button.disabled).toBe(false);
+    expect(button.textContent).toBe('Send →');
   });
 
-  it('wires several forms independently', () => {
-    document.body.innerHTML = build('one') + build('two');
-    const nav = vi.fn<(url: string) => void>();
-    initProblemBoxes(document, nav);
-    const [one, two] = Array.from(document.querySelectorAll('form'));
-    one.querySelector('input')!.value = 'First';
-    one.dispatchEvent(new Event('submit', { cancelable: true }));
-    two.dispatchEvent(new Event('submit', { cancelable: true }));
-    expect(nav).toHaveBeenCalledTimes(1);
-    expect(two.querySelector<HTMLElement>('[data-error]')!.hidden).toBe(false);
-    expect(one.querySelector<HTMLElement>('[data-error]')!.hidden).toBe(true);
+  it('initialises every challenge form on the page', () => {
+    document.body.innerHTML = `<form data-problem-box><textarea name="message"></textarea><input name="email"/><p data-error hidden></p><button type="submit">Send</button></form>`;
+    const s = vi.fn<Send>();
+    initProblemBoxes(document, s);
+    expect(document.querySelector('form')!.noValidate).toBe(true);
   });
 });

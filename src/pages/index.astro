@@ -27,7 +27,6 @@ const affiliations = (await getCollection('affiliations'))
   name={site.name}
   sameAs={sameAs}
   jobTitle={site.headline.replace(/\.$/, '')}
-  email={site.email}
   imageAlt="Dr Alexz Farrall"
 >
   <Nav name={site.name} />
@@ -42,7 +41,7 @@ const affiliations = (await getCollection('affiliations'))
     <Ventures />
     <Research />
     <Recognition />
-    <Contact email={site.email} links={site.links} memberships={site.memberships} />
+    <Contact formKey={site.formKey} links={site.links} memberships={site.memberships} />
   </main>
   <Footer name={site.name} />
 </Base>

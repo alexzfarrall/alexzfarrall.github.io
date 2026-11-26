@@ -275,7 +275,7 @@ describe('built page', () => {
     }
   });
 
-  it('lists memberships under the email line in the contact section, not in recognition', () => {
+  it('lists memberships in the contact section, not in recognition', () => {
     if (!memberships) return;
     expect(doc.querySelector('#contact .contact__members')?.textContent).toMatch(/^Member of /);
     expect(doc.querySelector('#recognition')?.textContent).not.toMatch(/Member of /);
@@ -287,15 +287,34 @@ describe('built page', () => {
     for (const c of cards) expect(c.querySelector('img:not(.card__logo), .placeholder')).not.toBeNull();
   });
 
-  it('works without JS: the challenge form posts to mailto with a subject', () => {
+  it('never shows an email address or mailto link on the page', () => {
+    const html = readFileSync('dist/index.html', 'utf8');
+    expect(html).not.toMatch(/mailto:/i);
+    expect(html).not.toMatch(/[\w.+-]+@[\w-]+\.[\w.]+/);
+  });
+
+  it("works without JS: the challenge form posts to Web3Forms and asks for the visitor's email", () => {
     const forms = all('form[data-problem-box]');
-    expect(forms).toHaveLength(1);
-    for (const form of forms) {
-      expect(form.getAttribute('action')).toMatch(/^mailto:/);
-      expect(form.getAttribute('method')).toBe('get');
-      expect(form.querySelector('input[name="subject"]')?.getAttribute('value')).toBe('A problem for you');
-      expect(form.querySelector('[name="body"]')).not.toBeNull();
+    if (!String(site.formKey ?? '').trim()) {
+      expect(forms).toHaveLength(0);
+      return;
     }
+    expect(forms).toHaveLength(1);
+    const form = forms[0];
+    expect(form.getAttribute('action')).toBe('https://api.web3forms.com/submit');
+    expect(form.getAttribute('method')).toBe('POST');
+    expect(form.querySelector('input[name="access_key"]')?.getAttribute('value')).toBe(String(site.formKey).trim());
+    expect(form.querySelector('input[name="redirect"]')?.getAttribute('value')).toBe('https://alexzfarrall.com/thanks/');
+    expect(form.querySelector('textarea[name="message"][required]')).not.toBeNull();
+    expect(form.querySelector('input[name="email"][type="email"][required]')).not.toBeNull();
+    expect(form.querySelector('input[name="name"]:not([required])')).not.toBeNull();
+  });
+
+  it('has an /admin shortcut to the editor that search engines ignore', () => {
+    const admin = readFileSync('dist/admin/index.html', 'utf8');
+    expect(admin).toContain('https://app.pagescms.org/alexzfarrall/alexzfarrall.github.io/main');
+    expect(admin).toMatch(/noindex/);
+    expect(readFileSync('dist/thanks/index.html', 'utf8')).toMatch(/noindex/);
   });
 
   it('includes sharing metadata and Person structured data', () => {
