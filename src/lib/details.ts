@@ -40,3 +40,29 @@ export const projectHref = (id: string) => `/projects/${id}/`;
 
 /** PDFs live in public/files and are linked as /files/<name>.pdf. */
 export const isPdfPath = (v: string) => /^\/files\/[^?#]+\.pdf$/i.test(v) && !v.includes('..');
+
+const blankToUndefined = (v: unknown) =>
+  typeof v === 'string' ? v.trim() || undefined : v === null ? undefined : v;
+
+/**
+ * Overview PDF from the content file. Never fails the build: a missing leading "/" is added,
+ * and anything that still isn't /files/<name>.pdf warns and is dropped (no PDF button).
+ */
+export function normalisePdf(v: unknown): string | undefined {
+  const s = blankToUndefined(v);
+  if (s === undefined) return undefined;
+  if (typeof s === 'string') {
+    const path = s.startsWith('/') ? s : `/${s}`;
+    if (isPdfPath(path)) return path;
+  }
+  console.warn(`[files] Overview PDF "${String(s)}" is not a /files/<name>.pdf path; the PDF button is left out.`);
+  return undefined;
+}
+
+/** Optional text with a length limit: blank means none; longer text is cut with an ellipsis and a warning. */
+export function clampText(v: unknown, max: number): unknown {
+  const s = blankToUndefined(v);
+  if (typeof s !== 'string' || s.length <= max) return s;
+  console.warn(`[content] "${s.slice(0, 40)}…" is longer than ${max} characters; it was shortened.`);
+  return `${s.slice(0, max - 1).trimEnd()}…`;
+}

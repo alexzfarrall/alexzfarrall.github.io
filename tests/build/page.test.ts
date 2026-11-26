@@ -5,6 +5,7 @@ import { parse } from 'yaml';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { RECOGNITION_TYPES, STATUSES } from '../../src/lib/constants';
+import { isPdfPath } from '../../src/lib/details';
 
 let doc: Document;
 
@@ -356,39 +357,51 @@ describe('built page', () => {
 });
 
 // Project pages exist only for visible research items with pop-out details. Real content may have
-// none, so every check below is driven by what the content files actually contain.
+// none, so every check below is driven by what the content files actually contain. Entry ids come
+// from the built output (Astro's own slugs), and pages are matched to content files by title.
 describe('project pages', () => {
   const blank = (v: unknown) => typeof v !== 'string' || !v.trim();
   const list = (v: unknown) => (Array.isArray(v) ? v : v == null ? [] : [v]).filter((x) => !blank(x)) as string[];
+  // Mirrors normalisePdf: a missing leading "/" is added; anything else that isn't /files/*.pdf is ignored.
+  const pdfOf = (d: Record<string, any>) => {
+    if (blank(d.pdf)) return undefined;
+    const t = String(d.pdf).trim();
+    const path = t.startsWith('/') ? t : `/${t}`;
+    return isPdfPath(path) && existsSync(join('public', path)) ? path : undefined;
+  };
   const detailed = (d: Record<string, any>) =>
     !blank(d.summary) ||
     list(d.results).length > 0 ||
     list(d.gallery).some((g) => uploads.has((g.split(/[\/]/).pop() ?? '').toLowerCase())) ||
-    (!blank(d.pdf) && existsSync(join('public', d.pdf)));
+    pdfOf(d) !== undefined;
+  const titleOf = (d: Record<string, any>) => String(d.title ?? '').trim();
   const research = readdirSync('src/content/research')
     .filter((f) => f.endsWith('.yml'))
-    .map((f) => ({ id: f.replace(/\.yml$/, '').toLowerCase(), d: readYml(`src/content/research/${f}`) }));
-  const projects = research.filter((r) => r.d.hidden !== true && detailed(r.d));
-  const hiddenOnes = research.filter((r) => r.d.hidden === true && detailed(r.d));
-  const pageFor = (id: string) => join('dist', 'projects', id, 'index.html');
+    .map((f) => readYml(`src/content/research/${f}`));
+  const projects = research.filter((d) => d.hidden !== true && detailed(d));
+  const hiddenOnes = research.filter((d) => d.hidden === true && detailed(d));
+  const built = existsSync('dist/projects') ? readdirSync('dist/projects').sort() : [];
   const parsePage = (id: string) =>
-    new (new Window().DOMParser)().parseFromString(readFileSync(pageFor(id), 'utf8'), 'text/html') as unknown as Document;
+    new (new Window().DOMParser)().parseFromString(
+      readFileSync(join('dist', 'projects', id, 'index.html'), 'utf8'),
+      'text/html',
+    ) as unknown as Document;
+  const pages = built.map((id) => ({ id, page: parsePage(id) }));
+  const pageTitle = (page: Document) => page.querySelector('article[data-project] h1')?.textContent ?? '';
 
-  it('builds a page for exactly the visible items with details', () => {
-    const built = existsSync('dist/projects') ? readdirSync('dist/projects').sort() : [];
-    expect(built).toEqual(projects.map((p) => p.id).sort());
-    for (const h of hiddenOnes) expect(existsSync(pageFor(h.id))).toBe(false);
+  it('builds a page for exactly the visible items with details, and none for hidden ones', () => {
+    expect(pages.map((p) => pageTitle(p.page)).sort()).toEqual(projects.map(titleOf).sort());
+    for (const h of hiddenOnes) expect(pages.map((p) => pageTitle(p.page))).not.toContain(titleOf(h));
   });
 
   it('gives each project page one h1 inside the shared article, a back link and its own title', () => {
-    for (const p of projects) {
-      const page = parsePage(p.id);
+    for (const { id, page } of pages) {
+      const title = pageTitle(page);
       expect(page.querySelectorAll('h1')).toHaveLength(1);
-      expect(page.querySelector('article[data-project] h1')?.textContent).toBe(String(p.d.title).trim());
       expect(page.querySelector('header a[href="/#research"]')?.textContent).toContain('All research');
-      expect(page.querySelector('title')?.textContent).toBe(`${String(p.d.title).trim()} · Dr Alexz Farrall`);
+      expect(page.querySelector('title')?.textContent).toBe(`${title} · Dr Alexz Farrall`);
       expect(page.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
-        `https://alexzfarrall.github.io/projects/${p.id}/`,
+        `https://alexzfarrall.com/projects/${id}/`,
       );
       for (const a of page.querySelectorAll('[data-project] a[href^="http"], [data-project] a[href$=".pdf"]')) {
         expect(a.getAttribute('target')).toBe('_blank');
@@ -397,12 +410,25 @@ describe('project pages', () => {
     }
   });
 
+  it('shows the PDF button only for a valid /files/*.pdf that exists (a bad path never fails the build)', () => {
+    for (const { page } of pages) {
+      const entry = projects.find((d) => titleOf(d) === pageTitle(page))!;
+      const pdf = pdfOf(entry);
+      const buttons = Array.from(page.querySelectorAll('[data-project] a[href$=".pdf"], [data-project] a[href$=".PDF"]'));
+      if (pdf) {
+        expect(buttons.map((a) => a.getAttribute('href'))).toEqual([pdf]);
+        expect(buttons[0].textContent).toMatch(/PDF · \d/);
+      } else {
+        expect(buttons).toHaveLength(0);
+      }
+    }
+  });
+
   it('links cards and rows with details to their page, with the + cue on cards only', () => {
-    const links = all('#research a[href^="/projects/"]');
-    expect(links).toHaveLength(projects.length);
-    for (const p of projects) {
-      const a = doc.querySelector(`#research a[href="/projects/${p.id}/"]`)!;
-      expect(a).not.toBeNull();
+    const hrefs = all('#research a[href^="/projects/"]').map((a) => a.getAttribute('href')).sort();
+    expect(hrefs).toEqual(built.map((id) => `/projects/${id}/`));
+    for (const id of built) {
+      const a = doc.querySelector(`#research a[href="/projects/${id}/"]`)!;
       expect(a.hasAttribute('data-details')).toBe(true);
       expect(a.hasAttribute('target')).toBe(false);
       if (a.closest('.rcard')) {
@@ -412,14 +438,13 @@ describe('project pages', () => {
         expect(a.querySelector('.cue')).toBeNull();
       }
     }
-    expect(all('#research .cue').length).toBeLessThanOrEqual(projects.length);
-    expect(all('#research [data-details]')).toHaveLength(projects.length);
+    expect(all('#research [data-details]')).toHaveLength(built.length);
   });
 
-  it('lists project pages in the sitemap, and no hidden ones', () => {
+  it('lists exactly the project pages in the sitemap', () => {
     const sitemap = readFileSync('dist/sitemap.xml', 'utf8');
-    for (const p of projects) expect(sitemap).toContain(`<loc>https://alexzfarrall.github.io/projects/${p.id}/</loc>`);
-    for (const h of hiddenOnes) expect(sitemap).not.toContain(`/projects/${h.id}/`);
-    expect(sitemap.match(/<loc>/g)).toHaveLength(1 + projects.length);
+    const locs = [...sitemap.matchAll(/<loc>https:\/\/alexzfarrall\.com\/projects\/([^<]+)\/<\/loc>/g)].map((m) => m[1]);
+    expect(locs.sort()).toEqual(built);
+    expect(sitemap.match(/<loc>/g)).toHaveLength(1 + built.length);
   });
 });

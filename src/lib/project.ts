@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { ImageMetadata } from 'astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 import { formatBytes, hasDetails } from './details';
-import { resolveOptional } from './uploads';
+import { resolveImage } from './uploads';
 
 export type ResearchItem = CollectionEntry<'research'>['data'] & { id: string };
 
@@ -20,13 +20,26 @@ export function pdfSize(path?: string): string | undefined {
   return undefined;
 }
 
+/** An extra (gallery) photo, or undefined (with one warning) when the file is missing: it is skipped. */
+export function galleryPhoto(path: string): ImageMetadata | undefined {
+  try {
+    return resolveImage(path);
+  } catch {
+    if (!warned.has(path)) {
+      warned.add(path);
+      console.warn(`[images] Extra photo "${path}" is not in src/assets/uploads; it is skipped.`);
+    }
+    return undefined;
+  }
+}
+
 export const isProject = (item: CollectionEntry<'research'>['data']) =>
   !item.hidden &&
-  hasDetails(item, { image: (p) => resolveOptional(p) !== undefined, file: (p) => pdfSize(p) !== undefined });
+  hasDetails(item, { image: (p) => galleryPhoto(p) !== undefined, file: (p) => pdfSize(p) !== undefined });
 
 /** Gallery photos that exist, in order. */
 export const galleryImages = (item: { gallery?: string[] }): ImageMetadata[] =>
-  (item.gallery ?? []).map((p) => resolveOptional(p)).filter((m): m is ImageMetadata => m !== undefined);
+  (item.gallery ?? []).map(galleryPhoto).filter((m): m is ImageMetadata => m !== undefined);
 
 /** Visible research items with their entry id, for the cards and project pages. */
 export async function researchItems(): Promise<ResearchItem[]> {

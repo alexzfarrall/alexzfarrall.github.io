@@ -7,6 +7,9 @@ interface Options {
   navigate?: (url: string) => void;
 }
 
+/** A pop-out that takes longer than this to load falls back to the plain link. */
+export const LOAD_TIMEOUT = 2500;
+
 export function initProjectDialog(doc: Document = document, opts: Options = {}): void {
   const win = doc.defaultView;
   if (!win || typeof win.HTMLDialogElement !== 'function' || typeof win.DOMParser !== 'function') return;
@@ -16,6 +19,8 @@ export function initProjectDialog(doc: Document = document, opts: Options = {}):
   let dialog: HTMLDialogElement | undefined;
   let scroller: HTMLElement;
   let opener: HTMLElement | null = null;
+  // Only the latest click may open the pop-out; closing it cancels anything still loading.
+  let seq = 0;
 
   const load = (url: string): Promise<Element> => {
     let hit = cache.get(url);
@@ -57,7 +62,11 @@ export function initProjectDialog(doc: Document = document, opts: Options = {}):
       if (e.target === d && downOnBackdrop) d.close();
       downOnBackdrop = false;
     });
-    d.addEventListener('close', () => { opener?.focus(); opener = null; });
+    d.addEventListener('close', () => {
+      seq++;
+      opener?.focus();
+      opener = null;
+    });
     doc.body.append(d);
     return d;
   };
@@ -76,8 +85,10 @@ export function initProjectDialog(doc: Document = document, opts: Options = {}):
     if (h1?.id) dialog.setAttribute('aria-labelledby', h1.id);
     scroller.replaceChildren(node);
     scroller.scrollTop = 0;
-    opener = link;
     if (!dialog.open) dialog.showModal();
+    opener = link;
+    // Keep the close button clear of a classic (space-taking) scrollbar.
+    dialog.style.setProperty('--pm-sb', `${scroller.offsetWidth - scroller.clientWidth}px`);
     scroller.focus();
   };
 
@@ -88,7 +99,21 @@ export function initProjectDialog(doc: Document = document, opts: Options = {}):
     const link = linkFrom(e.target);
     if (!link || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
-    load(link.href).then((a) => show(a, link), () => navigate(link.href));
+    const id = ++seq;
+    const fallback = () => {
+      clearTimeout(timer);
+      if (id !== seq) return;
+      seq++;
+      navigate(link.href);
+    };
+    const timer = setTimeout(fallback, LOAD_TIMEOUT);
+    load(link.href)
+      .then((a) => {
+        if (id !== seq) return;
+        clearTimeout(timer);
+        show(a, link);
+      })
+      .catch(fallback);
   });
   const prefetch = (e: Event) => {
     const link = linkFrom(e.target);

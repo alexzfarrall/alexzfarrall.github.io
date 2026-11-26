@@ -54,11 +54,13 @@ dialog.pm::backdrop {
 }
 dialog.pm[open]::backdrop { background: rgba(26, 31, 29, 0.38); backdrop-filter: blur(2px); }
 @starting-style { dialog.pm[open]::backdrop { background: rgba(26, 31, 29, 0); backdrop-filter: blur(0); } }
+/* The page behind stays put: the scrollbar's space is kept while scrolling is locked. */
+html { scrollbar-gutter: stable; }
 html:has(dialog.pm[open]) { overflow: hidden; }
-.pm__scroll { overflow: auto; max-height: inherit; overscroll-behavior: contain; scrollbar-width: thin; }
+.pm__scroll { overflow: auto; max-height: inherit; overscroll-behavior: contain; }
 .pm__scroll:focus-visible { outline: none; }
 .pm__x {
-  position: absolute; top: 0.75rem; right: 0.75rem; z-index: 2; display: grid; place-items: center;
+  position: absolute; top: 0.75rem; right: calc(0.75rem + var(--pm-sb, 0px)); z-index: 2; display: grid; place-items: center;
   width: 2.2rem; height: 2.2rem; border-radius: 50%; border: 0; cursor: pointer; padding: 0;
   background: var(--chip-bg); color: var(--ink); font: 400 1.15rem/1 var(--font-body);
   box-shadow: 0 2px 8px rgba(26, 31, 29, 0.15);

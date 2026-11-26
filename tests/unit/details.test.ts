@@ -1,5 +1,40 @@
-import { describe, expect, it } from 'vitest';
-import { formatBytes, hasDetails, isPdfPath, linkLabel, projectHref } from '../../src/lib/details';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { clampText, formatBytes, hasDetails, isPdfPath, linkLabel, normalisePdf, projectHref } from '../../src/lib/details';
+
+describe('normalisePdf (never fails the build)', () => {
+  afterEach(() => vi.restoreAllMocks());
+  it('keeps good paths and adds a missing leading slash', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(normalisePdf('/files/a.pdf')).toBe('/files/a.pdf');
+    expect(normalisePdf(' files/a.pdf ')).toBe('/files/a.pdf');
+    expect(normalisePdf('')).toBeUndefined();
+    expect(normalisePdf(null)).toBeUndefined();
+    expect(warn).not.toHaveBeenCalled();
+  });
+  it('drops anything else with a warning instead of throwing', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (const bad of ['https://example.com/a.pdf', '/uploads/a.pdf', '/files/a.docx', '/files/../a.pdf', 42]) {
+      expect(normalisePdf(bad)).toBeUndefined();
+    }
+    expect(warn).toHaveBeenCalledTimes(5);
+  });
+});
+
+describe('clampText', () => {
+  afterEach(() => vi.restoreAllMocks());
+  it('leaves short text alone and treats blank as none', () => {
+    expect(clampText(' Hello ', 10)).toBe('Hello');
+    expect(clampText('   ', 10)).toBeUndefined();
+    expect(clampText(null, 10)).toBeUndefined();
+  });
+  it('cuts long text at the limit with an ellipsis and a warning', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const out = clampText('abcdefghij klmnop', 10) as string;
+    expect(out).toBe('abcdefghi…');
+    expect(out.length).toBe(10);
+    expect(warn).toHaveBeenCalledOnce();
+  });
+});
 
 describe('hasDetails', () => {
   it('is false for an item with nothing extra', () => {

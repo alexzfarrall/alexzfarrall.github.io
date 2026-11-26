@@ -3,7 +3,7 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { FIELDS, RECOGNITION_TYPES, STATUSES } from './lib/constants';
 import { urlField } from './lib/url';
-import { isPdfPath } from './lib/details';
+import { clampText, normalisePdf } from './lib/details';
 
 const yaml = (dir: string) => glob({ pattern: '*.yml', base: `./src/content/${dir}` });
 // Pages CMS may write "" or null for an emptied optional field.
@@ -18,13 +18,17 @@ const year = z.number().int().min(1990).max(2100);
 const text = z.string().trim().min(1);
 // Optional text: spaces-only counts as blank.
 const blank = (v: unknown) => (typeof v === 'string' ? v.trim() || undefined : v === null ? undefined : v);
-const optText = (max: number) => z.preprocess(blank, z.string().max(max).optional());
-// Optional list: a single value becomes a list, blank entries are dropped, extras beyond `max` are ignored.
-const optList = (max: number, item: z.ZodString) =>
+// Pop-out text never fails the build: text over the limit is shortened with an ellipsis (and a warning).
+const optText = (max: number) => z.preprocess((v) => clampText(v, max), z.string().optional());
+// Optional list: a single value becomes a list, blank entries are dropped, extras beyond `max` are ignored,
+// and each entry is shortened to `itemMax` characters when given.
+const optList = (max: number, itemMax?: number) =>
   z.preprocess((v) => {
-    const list = (Array.isArray(v) ? v : [v]).map(blank).filter((x) => x !== undefined);
+    const list = (Array.isArray(v) ? v : [v])
+      .map((x) => (itemMax ? clampText(x, itemMax) : blank(x)))
+      .filter((x) => x !== undefined);
     return list.length ? list.slice(0, max) : undefined;
-  }, z.array(item).optional());
+  }, z.array(z.string()).optional());
 
 const site = defineCollection({
   loader: yaml('site'),
@@ -95,12 +99,9 @@ const research = defineCollection({
       photoAlt: opt(z.string()),
       // Pop-out details (all optional).
       summary: optText(600),
-      gallery: optList(6, z.string()),
-      results: optList(5, z.string().max(120)),
-      pdf: z.preprocess(
-        blank,
-        z.string().refine(isPdfPath, 'Overview PDF must be a .pdf uploaded to Files (a path like /files/name.pdf).').optional(),
-      ),
+      gallery: optList(6),
+      results: optList(5, 120),
+      pdf: z.preprocess(normalisePdf, z.string().optional()),
       linkLabel: optText(40),
     })
     .transform(altFrom('title')),
